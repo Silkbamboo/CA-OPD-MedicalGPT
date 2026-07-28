@@ -1,0 +1,68 @@
+# ---------------------------------------------------------------------------
+# CA-OPD repository hygiene
+# Rule (PROJECT_PLAN.md §15, CLAUDE.md §5): model weights, checkpoints, raw
+# datasets, large logs and caches must never enter git history.
+# ---------------------------------------------------------------------------
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Run artifacts (kept on the data disk, symlinked into the repo)
+outputs/
+outputs*/
+checkpoints/
+runs/
+logs/
+tf-logs/
+wandb/
+swanlab*/
+
+# Model weights and optimizer state
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.gguf
+
+# Datasets: only manifests, schemas and small fixtures are versioned
+data/**/*.jsonl
+data/**/*.json
+data/**/*.parquet
+data/**/*.arrow
+data/**/*.csv
+!data/**/manifest*.json
+!data/**/*_manifest.json
+!tests/fixtures/**
+
+# Behaviour diagnostic set is small, deterministic and part of the eval
+# protocol (PROJECT_PLAN.md §8.4) -> explicitly versioned.
+!data/behavior/*.jsonl
+!data/behavior/*.json
+
+# Legacy prior-work eval assets are small and needed for reproducibility notes
+!legacy/eval/*.jsonl
+!legacy/eval/*.json
+
+# Caches
+.cache/
+cache/
+hf_home/
+*.lock
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
