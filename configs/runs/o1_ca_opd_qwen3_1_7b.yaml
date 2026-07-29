@@ -1,0 +1,105 @@
+# O1 · CA-OPD (constraint-aware dual teacher) on Qwen3-1.7B
+#
+# The improvement run: a constraint-aware router picks Medical vs Base Teacher per
+# window from controller-dev ability gaps, and per-domain KL safety scaling damps
+# whichever domain starts diverging.
+#
+# NOT YET EXECUTED. Two things must land first:
+#
+# 1. B2 must pass (single-teacher OPD works in this stack);
+# 2. the dual teacher must actually fit. As configured below the run declares
+#    `teacher_gpus_per_node: 2`, i.e. the NATIVE veRL multi-teacher path, which needs
+#    a third GPU (GPU0 student + 2 teacher replicas). On the dual-4090 box this
+#    config is intentionally kept as the reference/cross-check configuration, while
+#    the actual dual-teacher run goes through the adapter-routing teacher service
+#    (docs/decisions/0002-dual-teacher-topology.md, 方案 B) which serves both routes
+#    from ONE vLLM instance on GPU1.
+#
+# Keeping both is deliberate: if a third GPU ever becomes available, running this
+# config next to the shared-backbone service gives a controlled memory/throughput
+# comparison, which is exactly the evidence H6 (shared backbone lowers peak memory)
+# needs.
+
+run:
+  run_id: o1-ca-opd-qwen3-1.7b-s42
+  purpose: "Phase 2 O1: constraint-aware teacher routing + per-domain KL safety scaling"
+  baseline_id: O1
+  model: Qwen/Qwen3-1.7B
+  seed: 42
+  output_root: /root/autodl-tmp/ca-opd/outputs
+
+data:
+  manifest: /root/autodl-tmp/ca-opd/data/v1/data_manifest.json
+  controller_dev_samples: 600
+
+budget:
+  steps: 400
+  prompt_batch_size: 2
+  group_size: 2
+  max_prompt_tokens: 512
+  max_response_tokens: 768
+  checkpoint_every_steps: 25
+  controller_dev_every_steps: 25    # K = routing window
+  num_gpus: 2
+  price_per_gpu_hour_rmb: 2.5
+  cost_cap_rmb: 120.0
+
+throughput:
+  rollout_tokens_per_second: 300.0
+  teacher_prefill_tokens_per_second: 3000.0
+  optimizer_step_seconds: 1.5
+  measured: false
+  source: "assumed-default; replace with B2 measured system/* metrics before running"
+
+criteria:
+  success:
+    - "constraint satisfied at the selected checkpoint: dG >= -delta on controller dev"
+    - "medical accuracy at the selected checkpoint > best fixed-ratio baseline (B4/B5) under the same constraint"
+    - "router state transitions are visible in metrics.jsonl and match the ability curves"
+    - "fraction of checkpoints satisfying the constraint is higher than B4"
+  early_stop:
+    - "router.should_stop: both objectives satisfied and no medical improvement for 3 windows"
+  abort:
+    - "router oscillates every window for 5 consecutive windows (hysteresis ineffective)"
+    - "either teacher receives < p_min - 0.05 of realised batches (starvation)"
+    - "opd/reverse_kl_mean NaN, or policy/entropy < 0.1"
+    - "estimated cost exceeds cost_cap_rmb"
+
+verl:
+  student_model_path: /root/autodl-tmp/ca-opd/models/Qwen3-1.7B
+  teacher_key: teacher_route        # the router writes this field per sample
+  teacher_gpus_per_node: 2          # native path: needs a 3rd GPU (see header)
+  teacher_nnodes: 1
+  teachers:
+    - name: medical_teacher
+      routing_key: medical
+      model_path: /root/autodl-tmp/ca-opd/models/qwen3-1.7b-medical-teacher-merged
+      num_replicas: 1
+      tensor_model_parallel_size: 1
+      gpu_memory_utilization: 0.55
+    - name: base_teacher
+      routing_key: base
+      model_path: /root/autodl-tmp/ca-opd/models/Qwen3-1.7B
+      num_replicas: 1
+      tensor_model_parallel_size: 1
+      gpu_memory_utilization: 0.55
+  lora_rank: 32
+  lora_alpha: 32
+  lora_target_modules: all-linear
+  lora_adapter_path: null
+  layered_summon: true
+  loss_mode: k1
+  use_policy_gradient: true
+  use_task_rewards: false
+  clip_ratio_low: 0.2
+  clip_ratio_high: 0.28
+  topk: null
+  loss_max_clamp: 5.0
+  rollout_temperature: 1.0
+  lr: 3.0e-5
+
+router:
+  kind: constraint_aware
+  config_path: configs/opd/router_qwen3_1_7b.yaml
+  fixed_p_medical: null
+  single_teacher_id: null

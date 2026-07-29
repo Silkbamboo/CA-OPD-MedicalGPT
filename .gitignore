@@ -23,7 +23,9 @@ env/
 outputs/
 outputs*/
 checkpoints/
-runs/
+# TensorBoard-style run dirs only at the repo root or inside outputs - NOT configs/runs/
+/runs/
+outputs*/**/runs/
 logs/
 tf-logs/
 wandb/

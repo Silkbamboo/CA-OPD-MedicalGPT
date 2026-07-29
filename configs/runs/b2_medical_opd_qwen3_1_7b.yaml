@@ -1,0 +1,95 @@
+# B2 · Medical OPD (single teacher) on Qwen3-1.7B
+#
+# Phase 1 baseline: does single-teacher on-policy distillation work at all in our
+# stack? This is the run that validates rollout/teacher token alignment, throughput
+# and memory before any dual-teacher work.
+#
+# NOT YET EXECUTED. Numbers under `throughput` are assumed defaults and are marked
+# as such (`measured: false`), so the cost estimate is explicitly a guess. After the
+# first smoke run, replace them with the run's own system/* metrics and re-run
+# scripts/preflight.py.
+#
+# Teacher note (ADR-0002): with GPU0 = student and GPU1 = teacher pool, only ONE
+# teacher replica fits. B2 needs exactly one teacher, so it runs on the native veRL
+# path with merged Medical Teacher weights. The dual-teacher runs (B4/B5/O1) require
+# the adapter-routing service and are configured separately.
+
+run:
+  run_id: b2-medical-opd-qwen3-1.7b-s42
+  purpose: "Phase 1 B2: verify single Medical Teacher OPD end to end (alignment, throughput, memory)"
+  baseline_id: B2
+  model: Qwen/Qwen3-1.7B
+  seed: 42
+  output_root: /root/autodl-tmp/ca-opd/outputs
+
+data:
+  manifest: /root/autodl-tmp/ca-opd/data/v1/data_manifest.json
+  controller_dev_samples: 600      # 300 medical + 300 general
+
+budget:
+  steps: 200
+  prompt_batch_size: 2             # conservative start (plan §7.2)
+  group_size: 2
+  max_prompt_tokens: 512
+  max_response_tokens: 768
+  checkpoint_every_steps: 20
+  controller_dev_every_steps: 20   # K: routing/monitoring window
+  num_gpus: 2
+  price_per_gpu_hour_rmb: 2.5      # AutoDL dual 4090; verify on the instance page
+  cost_cap_rmb: 60.0
+
+throughput:
+  rollout_tokens_per_second: 300.0
+  teacher_prefill_tokens_per_second: 3000.0
+  optimizer_step_seconds: 1.5
+  measured: false
+  source: "assumed-default (conservative 4090 LoRA guess); replace after b2 smoke"
+
+criteria:
+  success:
+    - "20-step smoke: teacher logprob and student logprob are computed on identical token ids (assert in runner)"
+    - "opd/reverse_kl_mean is finite and decreasing over the first 100 steps"
+    - "policy/entropy does not collapse below 0.3 of its initial value"
+    - "controller-dev medical accuracy >= B0 (base model) after 200 steps"
+    - "no OOM at group_size=2, response 768"
+  early_stop:
+    - "controller-dev medical accuracy fails to improve for 3 consecutive windows"
+  abort:
+    - "opd/reverse_kl_mean is NaN or > 20 for 2 consecutive steps"
+    - "ppo/clip_fraction > 0.5 for 3 consecutive steps (update too aggressive)"
+    - "policy/entropy < 0.1 (collapse)"
+    - "estimated cost exceeds cost_cap_rmb"
+    - "any final_test read appears in final_test_access.log during training"
+
+verl:
+  student_model_path: /root/autodl-tmp/ca-opd/models/Qwen3-1.7B
+  teacher_key: teacher_route
+  teacher_gpus_per_node: 1         # GPU1 only; GPU0 is the student
+  teacher_nnodes: 1
+  teachers:
+    - name: teacher_model          # default single-teacher entry name
+      routing_key: default
+      model_path: /root/autodl-tmp/ca-opd/models/qwen3-1.7b-medical-teacher-merged
+      num_replicas: 1
+      tensor_model_parallel_size: 1
+      gpu_memory_utilization: 0.55
+  lora_rank: 32                    # >= 32 per veRL LoRA guidance
+  lora_alpha: 32
+  lora_target_modules: all-linear
+  lora_adapter_path: null          # B2 starts from the base student, not the SFT adapter
+  layered_summon: true             # 24 GB card
+  loss_mode: k1                    # PG OPD
+  use_policy_gradient: true
+  use_task_rewards: false          # pure distillation signal
+  clip_ratio_low: 0.2
+  clip_ratio_high: 0.28
+  topk: null
+  loss_max_clamp: 5.0              # matches advantage_max in the CPU reference loop
+  rollout_temperature: 1.0
+  lr: 3.0e-5                       # LoRA: an order of magnitude above full-FT
+
+router:
+  kind: single_teacher
+  single_teacher_id: medical
+  config_path: null
+  fixed_p_medical: null
