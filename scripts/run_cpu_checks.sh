@@ -52,6 +52,8 @@ run_group "router"          python -m pytest tests/test_router.py -q
 run_group "data splits"     python -m pytest tests/test_data_splits.py -q
 run_group "chat template"   python -m pytest tests/test_chat_template.py -q
 run_group "eval"            python -m pytest tests/test_eval.py -q
+run_group "sft (dry-run path)"   python -m pytest tests/test_sft.py -q
+run_group "run plan + veRL cfg"  python -m pytest tests/test_run_plan_and_verl_config.py -q
 # loop tests are the memory-heavy ones: three fresh processes
 run_group "loop: rollout/teacher" python -m pytest tests/test_opd_loop.py -q -k "rollout or teacher or synthetic"
 run_group "loop: artifacts"       python -m pytest tests/test_opd_loop.py -q -k "dry_run or metrics_file or kl_safety or router_windows"
@@ -62,6 +64,10 @@ if [[ $QUICK -eq 0 ]]; then
       --config configs/data/fixture_cpu.yaml --output-dir outputs/data/fixture-check
   run_group "opd cpu dry-run" python -m src.opd.loop_cli \
       --config configs/opd/dev_cpu.yaml --output-dir outputs/opd-cpu-dryrun/latest
+  run_group "preflight: B2" python scripts/preflight.py \
+      --run-config configs/runs/b2_medical_opd_qwen3_1_7b.yaml --emit-plan outputs/plans
+  run_group "preflight: O1" python scripts/preflight.py \
+      --run-config configs/runs/o1_ca_opd_qwen3_1_7b.yaml --emit-plan outputs/plans
 fi
 
 echo

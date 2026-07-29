@@ -1,0 +1,52 @@
+# B1 · Medical SFT on Qwen3-1.7B -> produces the Medical Teacher LoRA
+#
+# This run has two purposes:
+#   1. baseline B1 (does medical SFT gain medical ability while losing general ability?)
+#   2. it produces the Medical Teacher used by every OPD run afterwards.
+#
+# LoRA rank/target modules are deliberately identical to the OPD student config
+# (configs/runs/*.yaml): if teacher and student differed in capacity, the
+# teacher-student gap would no longer be attributable to knowledge.
+#
+# CPU dry-run (no model download, verifies data + template + assistant-only mask):
+#   python -m src.sft.train --config configs/sft/qwen3_1_7b_medical.yaml --dry-run
+
+run:
+  name: b1-medical-sft-qwen3-1.7b
+  purpose: "Baseline B1 + produce the Medical Teacher LoRA for all OPD runs"
+  baseline_id: B1
+  seed: 42
+  output_root: /root/autodl-tmp/ca-opd/outputs
+
+model:
+  path: /root/autodl-tmp/ca-opd/models/Qwen3-1.7B
+  max_seq_length: 2048          # covers prompt + reasoning + answer for most samples
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+
+data:
+  data_dir: /root/autodl-tmp/ca-opd/data/v1
+  max_samples: null             # use the whole medical_sft split
+  include_reasoning: true       # wrap Complex_CoT in <think>...</think>
+  system_prompt: "你是一名严谨的中文医疗助手。回答需明确不确定性，并在必要时建议就医。"
+  drop_longer_than_max_seq: true  # drop, never truncate mid-answer
+
+lora:
+  rank: 32                      # must match the OPD student
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+
+optim:
+  lr: 1.0e-4                    # LoRA: an order of magnitude above full fine-tuning
+  epochs: 2.0
+  per_device_batch_size: 4
+  gradient_accumulation_steps: 4   # effective batch 16 on one 4090
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  gradient_checkpointing: true
+  save_steps: 200
+  logging_steps: 10
+  save_only_model: true         # no optimizer.pt (ADR-0003 disk discipline)

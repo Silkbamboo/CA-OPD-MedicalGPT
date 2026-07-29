@@ -455,17 +455,117 @@ ALL CPU CHECKS PASSED
 
 ---
 
-## 9. 下一步（P1，需 GPU）
+## 9. P1 准备（无 GPU 部分，已完成）
 
-1. 建 `opd` 环境（数据盘，见 ADR-0001 §3.2），CPU 上先确认 Qwen3-1.7B 能被
-   tokenizer/config 加载；
-2. `src/sft/train.py`（TRL SFTTrainer + PEFT LoRA，rank 32 / all-linear）产出
-   Medical Teacher LoRA；
-3. 用真实数据跑 `build_splits`，产出 v1 manifest 并复核去重与领域纯度；
-4. veRL 单教师 OPD 20~50 step 冒烟（B2），核对 `actor/distillation/*` 指标；
-5. 双教师服务（ADR-0002 方案 B），记录共享 backbone 的显存/吞吐/切换延迟；
-6. 每个正式 run 前跑 `scripts/run_cpu_checks.sh` + 生成 run 计划（预计 step/token/
-   GPU-hour/费用上限），经批准后再开机。
+GPU 一开机就要花钱，所以"开机后才能做的事"必须尽量少。这一节的东西全部在 CPU 上做完并测过。
+
+### 9.1 付费门禁：`scripts/preflight.py`
+
+一条命令决定"能不能开机"：
+
+```bash
+$ python scripts/preflight.py --run-config configs/runs/b2_medical_opd_qwen3_1_7b.yaml --emit-plan outputs/plans
+PASS  run config schema + veRL constraints: b2-medical-opd-qwen3-1.7b-s42 (B2), 1 teacher(s), 37 veRL overrides
+WARN  router config: kind=single_teacher (no CA router config needed)
+WARN  data manifest: ...not found - build splits first
+WARN  throughput provenance: estimate uses assumed throughput
+PASS  cost cap: 3.71 RMB <= cap 60.00 (1.482 GPU-h, 614,400 generated tokens)
+WARN  GPU availability: no CUDA device (planning mode; the real run needs 2 GPUs)
+WARN  transformers >= 4.51 (Qwen3): 4.49.0 cannot load Qwen3
+WARN  vllm / verl / ray installed: not installed
+GATE: PASSED WITH WARNINGS
+```
+
+七类检查：run 配置 schema → veRL 约束 → 路由配置一致性（`window_steps` 必须等于
+`controller_dev_every_steps`）→ 数据 manifest（sha256 + 零重叠 + **final_test
+访问日志必须为空**）→ 吞吐数据来源（实测还是假设）→ 成本上限 → 环境版本。
+开发机上环境项是 WARN，加 `--strict-env`（训练机上用）就变成 FAIL。
+
+### 9.2 把 veRL 的启动期约束搬到 CPU 上
+
+`src/opd/verl_config.py` 把项目配置翻译成 veRL 的 Hydra overrides，并**复刻了
+veRL 自己会在启动时报的错**，这样配错会死在单元测试里而不是死在按小时计费的机器上：
+
+| 复刻的约束 | 测试 |
+|---|---|
+| 教师池 GPU 数必须等于 Σ(replicas × world_size) | `test_dual_teacher_does_not_fit_two_gpus`——双教师 + 1 张教师卡直接抛错，加到 2 张才通过。这就是 ADR-0002 的核心发现被写成了可执行断言 |
+| 命名教师不能与默认 `teacher_model` 条目共存 | `test_default_teacher_entry_cannot_coexist_with_named_teachers` |
+| 教师条目不接受 LoRA adapter 路径 | `test_teacher_lora_adapter_is_rejected_with_a_pointer_to_the_adr` |
+| `k1` + `use_policy_gradient=false` 无梯度；`forward_kl_topk` + PG 丢弃分布信号 | `test_loss_mode_and_policy_gradient_combinations` |
+| 教师 `max_model_len` 必须覆盖 prompt+response+1 | `test_teacher_max_model_len_must_cover_prompt_plus_response` |
+| LoRA 必须 `rollout.load_format=safetensors` | `test_single_teacher_overrides_contain_required_keys` |
+
+### 9.3 run 计划与成本估算：`src/utils/run_plan.py`
+
+同一个 YAML 同时生成"申报的计划"和"实际执行的命令"，避免计划写 200 step、
+命令跑 2000 step。估算里刻意区分**实测**与**假设**：`measured: false` 时
+`assumptions_used` 会把每个猜的数字列出来，计划文档里也照打——不让估算看起来
+比它的依据更可靠。B2 的估算是 1.48 GPU-h / 3.71 元（假设吞吐下），
+上限 60 元；超上限 `check_cost_cap()` 直接抛 `CostCapExceeded`。
+
+墙钟时间按 `max(rollout, teacher) + optimizer` 算而不是三者相加，
+因为 veRL 的 agent loop 里教师打分与其他样本的 rollout 是重叠的
+（`test_wall_clock_assumes_overlap_not_sum` 固定了这个口径）。
+
+### 9.4 SFT：CPU 上先把数据/模板/mask 验完
+
+`src/sft/train.py` 有两个入口：`train()`（需要 GPU + transformers ≥ 4.51）和
+**`dry_run()`（CPU、不下模型）**。dry-run 用真实 split 渲染全部样本、算 token 统计、
+打印一条完整渲染示例和 mask 摘要：
+
+```bash
+$ python -m src.sft.train --config configs/sft/qwen3_1_7b_medical.yaml --dry-run
+{"num_samples": ..., "num_dropped_too_long": ..., "trainable_ratio": ...,
+ "length_percentiles": {"min":..., "p50":..., "p90":..., "p99":..., "max":...}}
+--- rendered example (prompt) ---      <|im_start|>system ... <|im_start|>assistant
+--- rendered example (completion, trained) ---   <think>...</think>回答<|im_end|>
+```
+
+两个刻意的设计：**超长样本丢弃而不截断**（截断推理答案等于教模型半句话就停），
+以及 SFT 与评测**必须走同一个模板函数**——测试
+`test_examples_use_the_same_template_as_evaluation` 把这条钉住了，
+否则"医疗能力提升"里会混进格式差异的贡献。
+
+### 9.5 Phase 1/2 的 run 配置
+
+| 文件 | 用途 |
+|---|---|
+| `configs/sft/qwen3_1_7b_medical.yaml` | B1 Medical SFT，产出 Medical Teacher LoRA（rank 32 / all-linear，与 OPD student 一致） |
+| `configs/runs/b2_medical_opd_qwen3_1_7b.yaml` | B2 单教师 OPD，走 veRL 原生路径（1 张教师卡够用） |
+| `configs/runs/o1_ca_opd_qwen3_1_7b.yaml` | O1 CA-OPD 双教师；文件头明确写了它声明的是**原生路径（需第 3 张卡）**，双 4090 上实际走 ADR-0002 方案 B 的 adapter 路由服务，两份并存是为了将来做受控的显存/吞吐对比 |
+| `configs/opd/router_qwen3_1_7b.yaml` | 路由器全部超参；`general_baseline` 必须先用 Base 模型在 controller dev 上测出来再冻结 |
+
+每个 run 配置都带三类条件：success / early_stop / **abort**。abort 里写死了
+"reverse KL 为 NaN 或 >20 连续 2 步"、"clip_fraction >0.5 连续 3 步"、
+"entropy <0.1"、"训练期间 final_test_access.log 出现任何读取"——
+这些是我在无人看管的长跑里希望它自己停下来的条件。
+
+### 9.6 这一节新增的测试
+
+```bash
+$ python -m pytest tests/test_sft.py tests/test_run_plan_and_verl_config.py -q
+25 passed in 4.41s
+```
+
+合计 Phase 0 + P1 准备：**200 passed, 1 skipped**（19 项闭环集成测试 + 181 项单测）。
+
+---
+
+## 10. 下一步（需 GPU）
+
+1. 建 `opd` 环境（数据盘，见 ADR-0001 §3.2），先确认 Qwen3-1.7B 能被 tokenizer/config 加载；
+2. 下 Qwen3-1.7B（3.80 GiB）；4B（7.51 GiB）等 Phase 3 再下；
+3. 用真实数据跑 `python -m src.data.build_splits --config configs/data/base.yaml`，
+   复核 manifest 的去重与领域纯度；
+4. `python -m src.sft.train --config configs/sft/qwen3_1_7b_medical.yaml --dry-run`
+   用**真 tokenizer** 复跑一遍（顺带解锁 `test_matches_real_tokenizer` 那条 skip 的测试）；
+5. B1 SFT → 得到 Medical Teacher LoRA；
+6. `python scripts/preflight.py --run-config configs/runs/b2_medical_opd_qwen3_1_7b.yaml --strict-env --with-tests`
+   全绿后再开 B2 的 20 step 冒烟，核对 `actor/distillation/*` 与本仓库 CPU 参考实现的数值；
+7. 把 B2 实测的 `system/*` 吞吐写回 run 配置的 `throughput`（`measured: true`），
+   重算所有后续 run 的成本；
+8. 双教师服务（ADR-0002 方案 B），记录共享 backbone 的显存/吞吐/切换延迟。
+
 
 ---
 

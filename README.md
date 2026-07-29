@@ -293,13 +293,25 @@ flowchart LR
 | 模块 | 公开状态 | 对应交付 |
 |---|---|---|
 | 研究问题与 CA-OPD 方法定义 | 设计完成 | 目标函数、路由公式与 KL 安全控制 |
-| 双 RTX 4090 系统方案 | 设计完成 | GPU 角色拆分与共享 Teacher 拓扑 |
-| 数据隔离与数学正确性测试 | 开发中 | 自动化测试与可复现 dry-run |
+| 双 RTX 4090 系统方案 | 设计完成（含可行性核实） | GPU 角色拆分、共享 Teacher 拓扑、[ADR-0002](docs/decisions/0002-dual-teacher-topology.md) |
+| 技术栈与模型版本 | 已锁定 | [ADR-0001](docs/decisions/0001-opd-stack-and-models.md)：Qwen3-1.7B/4B、veRL PG-OPD、vLLM、CUDA/transformers 版本矩阵 |
+| OPD 数学正确性（对齐/mask/advantage/PPO/KL 缩放） | ✅ CPU 已验证 | `src/opd/core.py` + 29 项单测 |
+| CA-OPD 路由与迟滞状态机 | ✅ CPU 已验证 | `src/opd/router.py` + 25 项单测 |
+| 端到端训练闭环与精确 resume | ✅ CPU 已验证 | `src/opd/loop.py` + 19 项集成测试 |
+| 数据 schema、四路 split 隔离、final-test 审计 | ✅ CPU 已验证 | `src/data/` + 44 项单测、版本化 manifest |
+| MCQ 评测与行为诊断评测 | ✅ CPU 已验证 | `src/eval/` + 58 项单测 |
+| 付费训练门禁（run 计划/成本上限/泄漏检查） | ✅ CPU 已验证 | `scripts/preflight.py` + 25 项单测 |
 | Medical SFT / OPD / SAR / IDT | 未发布结果 | 同栈配置、日志与 checkpoint |
 | CA-OPD 消融与多 seed | 未发布结果 | 原始指标与统计汇总 |
 | Qwen3-4B 主实验与 final test | 尚未执行 | 冻结配置结果与最终报告 |
 
-当前公开版本聚焦 CA-OPD 方法、系统设计与实验口径。训练实现、自动化测试、受控基线和完整复现入口将在通过正确性验证后按里程碑发布。前期 Qwen2.5-1.5B 医疗 SFT、DPO、GRPO 与规则评测仅作为探索资产，不属于 Qwen3 + veRL/vLLM OPD 主线，也不会进入 CA-OPD 主结果表。
+Phase 0（正确性）已完成：**200 项测试在 CPU 上通过**（`bash scripts/run_cpu_checks.sh`），
+覆盖 token 对齐、prompt/padding/EOS mask、advantage 方向、old logprob 冻结、PPO clip 边界、
+领域级 KL 安全缩放、reduction 长度偏置、路由 EMA/迟滞/概率边界/早停、split 互斥与哈希去重、
+OPD 池不落盘答案、final-test 访问审计、checkpoint 恢复后指标逐位一致。
+过程记录见 [Phase 0 工作日志](docs/experiments/phase0_worklog.md)。
+
+当前公开版本聚焦 CA-OPD 方法、系统设计与实验口径。受控基线与完整结果将在 GPU 阶段按里程碑发布。前期 Qwen2.5-1.5B 医疗 SFT、DPO、GRPO 与规则评测作为前置探索资产保留在 [`legacy/`](legacy/README.md)，不属于 Qwen3 + veRL/vLLM OPD 主线，也不会进入 CA-OPD 主结果表。
 
 当前没有可用于 CA-OPD 主结论的正式结果。未来主表固定报告 Medical、General、$\Delta M$、$\Delta G$、约束是否满足和 seed 数；每行链接 YAML、git SHA、数据 manifest、metadata、原始 metrics、checkpoint 选择依据与失败记录。图表由原始产物自动生成，不手工填写。
 

@@ -1,0 +1,25 @@
+# CA-OPD router configuration for Qwen3-1.7B runs.
+#
+# Every value here is a knob the ablations touch; none of them may be hard-coded in
+# code (src/opd/router.py reads this file through RouterConfig.from_mapping).
+#
+# medical_target (T_M) and general_baseline (B_G) must be measured on controller dev
+# with the BASE model before the first CA-OPD run, and then frozen. They are left as
+# placeholders below precisely so a preflight check fails loudly if someone forgets:
+# `general_baseline: null` will not validate.
+
+medical_target: 0.60        # T_M: medical accuracy target on controller dev
+general_baseline: 0.52      # B_G: base model's controller-dev general accuracy (MEASURE, then freeze)
+delta: 0.01                 # allowed general degradation (1 point, fixed before any final test)
+scale_medical: 0.05         # s_M: normalisation scale for the medical gap
+scale_general: 0.05         # s_G
+rho: 0.7                    # ability EMA decay
+tau: 1.0                    # routing softmax temperature
+p_min: 0.2                  # neither teacher may starve
+p_max: 0.8
+window_steps: 25            # K optimizer steps per routing window
+windows_below_to_recover: 2 # raw below-floor observations needed to enter recovery
+windows_above_to_release: 1 # windows at/above floor needed to leave recovery
+early_stop_patience: 3
+early_stop_min_improvement: 0.002
+initial_p_medical: 0.5      # start balanced, let the gaps decide
