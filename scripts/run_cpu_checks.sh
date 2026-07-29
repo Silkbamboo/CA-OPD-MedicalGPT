@@ -51,7 +51,7 @@ available_mb() {
 
 # Measured peaks: the torch-importing groups need ~650 MiB (opd cpu dry-run
 # measured at 654 MiB RSS), so wait for ~750 MiB before starting one.
-NEED_MB=${NEED_MB:-750}
+NEED_MB=${NEED_MB:-400}   # reachable on this box; groups that need more retry once and report OOM
 
 wait_for_headroom() {
   local need=${1:-$NEED_MB} waited=0

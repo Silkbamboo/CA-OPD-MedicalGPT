@@ -447,20 +447,27 @@ LoRA 配置、评测报告、数据 manifest）+ 两个终态 adapter（141 MiB�
 
 ```bash
 $ bash scripts/run_cpu_checks.sh
-PASS  opd math: 29 passed in 13.90s
-PASS  router: 25 passed in 8.21s
-PASS  data splits: 34 passed in 10.09s
-PASS  chat template: 10 passed, 1 skipped in 2.71s
-PASS  eval: 58 passed in 12.81s
-PASS  loop: rollout/teacher: 10 passed, 9 deselected in 21.11s
-PASS  loop: artifacts: 4 passed, 15 deselected in 36.21s
-PASS  loop: resume/routers: 6 passed, 13 deselected in 23.10s
+=== summary ==========================================================
+PASS  opd math: 29 passed in 5.83s
+PASS  router: 25 passed in 1.62s
+PASS  data splits: 34 passed in 3.34s
+PASS  chat template: 10 passed, 1 skipped in 0.72s
+PASS  eval: 58 passed in 4.14s
+PASS  sft (dry-run path): 9 passed in 1.20s
+PASS  run plan + veRL cfg: 16 passed in 1.33s
+PASS  loop: rollout/teacher: 10 passed, 9 deselected in 10.21s
+PASS  loop: artifacts: 4 passed, 15 deselected in 11.42s
+PASS  loop: resume/routers: 6 passed, 13 deselected in 11.51s
 PASS  data build (fixtures)
 PASS  opd cpu dry-run
+PASS  preflight: B2: GATE: PASSED WITH WARNINGS
+PASS  preflight: O1: GATE: PASSED WITH WARNINGS
 ALL CPU CHECKS PASSED
 ```
 
-合计 **176 passed, 1 skipped**（skip 项是等 GPU 机器上用真 Qwen3 tokenizer 复核 loss mask）。
+合计 **200 passed, 1 skipped**（skip 项是等 GPU 机器上用真 Qwen3 tokenizer 复核 loss mask）。
+两个 preflight 的 "WARNINGS" 是环境项（本机无 GPU、transformers 4.49、未装 vllm/verl/ray），
+在训练机上加 `--strict-env` 就会变成阻塞项。
 
 ### 已被测试证明的 vs 仅靠实现约定的
 
