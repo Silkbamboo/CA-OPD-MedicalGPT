@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
-# Run every CPU check for Phase 0: unit tests, the OPD dry-run and the data build.
+# Run every CPU check for Phase 0/P1: unit tests, the OPD dry-run, the data build
+# and the paid-run preflight gate.
 #
-# Why chunked: this dev container has a 2 GiB cgroup memory ceiling
-# (/sys/fs/cgroup/memory.max) that is shared with the editor/agent runtime, which
-# already occupies ~1.4-1.8 GiB. A single pytest process that imports torch and
-# instantiates a model per integration test gets OOM-killed (exit 137) near the
-# end of the run. Each group below therefore runs in a fresh interpreter, so peak
-# RSS stays under the remaining headroom. On a normal box `pytest -q` works in
-# one go; nothing about the tests themselves depends on this split.
+# Memory note (measured on this container, 2026-07-29):
+#   /sys/fs/cgroup/memory.max = 2 GiB, shared with the editor/agent runtime
+#   `import torch` alone            -> 374 MiB RSS
+#   `src.opd.loop_cli` 8-step run   -> 654 MiB peak RSS
+#   ambient usage while the agent is active leaves ~420-470 MiB
+# So a torch-importing group needs the box to be reasonably idle. Each group runs
+# in its own interpreter, waits for ~750 MiB of headroom (NEED_MB), and retries
+# once if it is OOM-killed; a persistent kill is reported as `OOM`, not `FAIL`, so
+# an environment limit is never mistaken for a broken test. If groups report OOM,
+# run the script again with the editor/agent idle, or run a single group directly:
 #
-# Usage: bash scripts/run_cpu_checks.sh [--quick]
+#   python -m pytest tests/test_opd_loop.py -q -k resume
+#
+# On a machine without this ceiling, plain `pytest -q` covers everything in one go.
+#
+# Usage: bash scripts/run_cpu_checks.sh [--quick]     # --quick skips the slow gates
+#        NEED_MB=500 bash scripts/run_cpu_checks.sh   # lower the headroom bar
 
 set -uo pipefail
 
@@ -18,6 +27,8 @@ cd "$(dirname "$0")/.." || exit 1
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export TOKENIZERS_PARALLELISM=false
+# cap glibc malloc arenas: cuts per-process virtual/anon overhead under the 2 GiB cgroup
+export MALLOC_ARENA_MAX=2
 export PYTHONPATH="${PYTHONPATH:-}:$(pwd)"
 
 QUICK=0
@@ -26,15 +37,48 @@ QUICK=0
 FAILED=0
 declare -a RESULTS=()
 
+# Available memory inside the cgroup, in MiB. The editor/agent runtime shares this
+# 2 GiB budget, so a group can be OOM-killed (exit 137) purely because of ambient
+# pressure - the same command passes standalone. We therefore wait for headroom
+# before each group and retry once.
+available_mb() {
+  local cur max
+  cur=$(cat /sys/fs/cgroup/memory.current 2>/dev/null || echo 0)
+  max=$(cat /sys/fs/cgroup/memory.max 2>/dev/null || echo 0)
+  if [[ "$max" == "max" || "$max" -eq 0 ]]; then echo 100000; return; fi
+  echo $(( (max - cur) / 1048576 ))
+}
+
+# Measured peaks: the torch-importing groups need ~650 MiB (opd cpu dry-run
+# measured at 654 MiB RSS), so wait for ~750 MiB before starting one.
+NEED_MB=${NEED_MB:-750}
+
+wait_for_headroom() {
+  local need=${1:-$NEED_MB} waited=0
+  while [[ $(available_mb) -lt $need && $waited -lt 150 ]]; do
+    sync
+    sleep 5
+    waited=$((waited + 5))
+  done
+}
+
 run_group() {
   local label="$1"; shift
-  local out
-  out=$("$@" 2>&1)
-  local ec=$?
-  local last
+  local out ec last attempt=1
+  while : ; do
+    wait_for_headroom
+    out=$("$@" 2>&1)
+    ec=$?
+    [[ $ec -ne 137 || $attempt -ge 2 ]] && break
+    attempt=$((attempt + 1))
+    sleep 8
+  done
   last=$(printf '%s\n' "$out" | tail -1)
   if [[ $ec -eq 0 ]]; then
     RESULTS+=("PASS  ${label}: ${last}")
+  elif [[ $ec -eq 137 ]]; then
+    FAILED=1
+    RESULTS+=("OOM   ${label}: killed by the container memory limit (avail $(available_mb) MiB) - rerun this group standalone")
   else
     FAILED=1
     RESULTS+=("FAIL  ${label} (exit ${ec}): ${last}")

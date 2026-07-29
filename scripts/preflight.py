@@ -157,31 +157,46 @@ def check_data_manifest(loaded: Any) -> List[Check]:
 
 
 def check_environment(strict: bool) -> List[Check]:
+    """Report the stack versions without importing the heavy packages.
+
+    ``importlib.metadata`` reads dist-info, and ``nvidia-smi`` answers the GPU
+    question, so preflight costs a few MiB instead of the ~350 MiB a torch import
+    needs. That matters here: this container shares a 2 GiB cgroup with the editor
+    runtime, and an unnecessary torch import was enough to get the gate OOM-killed.
+    """
+    from importlib.metadata import PackageNotFoundError, version as dist_version
+
     checks: List[Check] = []
     versions: Dict[str, str] = {}
     for pkg in ("torch", "transformers", "vllm", "verl", "ray", "peft", "trl"):
         try:
-            mod = __import__(pkg)
-            versions[pkg] = getattr(mod, "__version__", "unknown")
-        except Exception:  # noqa: BLE001
+            versions[pkg] = dist_version(pkg)
+        except PackageNotFoundError:
             versions[pkg] = "not-installed"
+        except Exception as exc:  # noqa: BLE001
+            versions[pkg] = f"unknown ({type(exc).__name__})"
 
     gpu = Check("GPU availability")
     try:
-        import torch
-
-        if torch.cuda.is_available():
-            names = [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())]
-            gpu.ok(f"{len(names)} GPU(s): {', '.join(names)}")
+        proc = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+        lines = [l.strip() for l in proc.stdout.splitlines() if l.strip()]
+        if proc.returncode == 0 and lines:
+            gpu.ok(f"{len(lines)} GPU(s): {'; '.join(lines)}")
         else:
             gpu.warn("no CUDA device (planning mode; the real run needs 2 GPUs)")
-    except Exception as exc:  # noqa: BLE001
-        gpu.warn(f"torch unavailable: {exc}")
+    except (OSError, subprocess.SubprocessError) as exc:
+        gpu.warn(f"nvidia-smi unavailable: {type(exc).__name__}")
     checks.append(gpu)
 
     tf = Check("transformers >= 4.51 (Qwen3)")
     raw = versions.get("transformers", "not-installed")
-    if raw == "not-installed":
+    if raw.startswith("not-installed") or raw.startswith("unknown"):
         (tf.fail if strict else tf.warn)("transformers is not installed")
     else:
         parts = []

@@ -360,7 +360,7 @@ $ python -m pytest -q
 Killed                                    # exit 137
 ```
 
-定位过程：
+定位过程（三条命令就能划清责任）：
 
 ```bash
 $ cat /sys/fs/cgroup/memory.current   # 1652027392  ≈ 1.65 GiB 已被占用
@@ -369,22 +369,42 @@ $ ps -eo pid,rss,comm --sort=-rss | head
   bun 384916 KB / kiro-cli-chat 278628 KB / jupyter-lab / tensorboard / autopanel ...
 ```
 
-不是我的代码泄漏，而是**编辑器与 agent 运行时本身占了 1.4–1.8 GiB**，
-留给 torch + 19 个集成测试的空间不足。`nproc=1`，所以也不是线程池的问题。
+不是我的代码泄漏，而是**编辑器与 agent 运行时本身占了 1.4–1.8 GiB**。
+`nproc=1`，所以也不是线程池的问题。
 
-尝试与结果：
+后来把数字量化到底：
+
+| 项 | 实测 |
+|---|---|
+| `import torch`（torch 2.3.0，什么都不做） | **374 MiB** RSS |
+| `src.opd.loop_cli` 跑 8 步玩具模型 | **654 MiB** 峰值 RSS |
+| agent 活跃时容器剩余可用 | **约 420–470 MiB** |
+
+结论很清楚：**任何 import torch 的进程都只剩 ~66 MiB 活动空间**，
+所以"整套测试一次跑完"在 agent 常驻的情况下是装不下的，与测试本身无关。
+
+尝试过的方案与结果：
 
 | 方案 | 结果 |
 |---|---|
-| `torch.set_num_threads(1)` + `gc.collect()` per test（`tests/conftest.py`） | 有帮助但不够 |
-| `pytest --forked`（每个测试单独进程） | 18/19 通过，仍有一个子进程被杀，且 168.7s |
-| **按文件/按 `-k` 分块，每块一个新进程**（`scripts/run_cpu_checks.sh`） | 全绿，约 120s（采纳） |
+| `torch.set_num_threads(1)` + 每个测试 `gc.collect()`（`tests/conftest.py`） | 有帮助但不够 |
+| `pytest --forked`（每测试一个子进程） | 18/19 通过，仍有一个子进程被杀，且 168.7s |
+| 按文件/`-k` 分块，每块新进程（`scripts/run_cpu_checks.sh`） | **各组单独跑全绿**（采纳） |
+| 给 preflight 去掉 torch 依赖：改用 `importlib.metadata` 读版本 + `nvidia-smi` 探测 GPU | 峰值 **350 MiB → 23 MiB**，preflight 彻底不再是 OOM 风险 |
+| 运行器加内存闸门：每组前等待 ~750 MiB 空闲，被 137 杀掉重试一次，仍失败报 `OOM` 而不是 `FAIL` | 采纳——环境限制不会被误读成测试坏了 |
+| `MALLOC_ARENA_MAX=2` | 小幅改善 |
 
-`scripts/run_cpu_checks.sh` 里写清了为什么要分块——在内存正常的机器上
-`pytest -q` 单进程就够，这个拆分是环境适配，不是测试本身的依赖。
+现状：**每一组都在本机独立跑过并通过**（本文各节贴的就是那些真实输出）；
+但在 agent 活跃时把 12 组串在一个脚本里跑，torch 相关的组会因为剩余内存不足被杀。
+脚本头部把实测数字和处置写清楚了：要拿到一次完整的全绿输出，
+在编辑器/agent 空闲时执行 `bash scripts/run_cpu_checks.sh` 即可；
+换一台没有这个上限的机器，直接 `pytest -q` 一次跑完。
 
-**面试可讲的点**：先量化再动手。看到 exit 137 不要立刻猜"代码内存泄漏"，
-`memory.current` / `memory.max` / `ps --sort=-rss` 三条命令就能把责任划清。
+**面试可讲的点**：先量化再动手。看到 exit 137 不要先猜"代码内存泄漏"，
+`memory.current` / `memory.max` / `ps --sort=-rss` 就能定位到是环境还是代码；
+定位之后的正确动作也不是"加大机器"，而是把不必要的重依赖去掉
+（preflight 从 350 MiB 降到 23 MiB 就是这么来的）、把长流程拆成独立进程、
+并让工具明确区分"环境不足"与"测试失败"。
 
 ### 6.7 `git gc` 也被 OOM 杀了，而且 3.14 GiB 对象删不掉
 

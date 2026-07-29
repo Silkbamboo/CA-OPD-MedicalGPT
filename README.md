@@ -305,7 +305,7 @@ flowchart LR
 | CA-OPD 消融与多 seed | 未发布结果 | 原始指标与统计汇总 |
 | Qwen3-4B 主实验与 final test | 尚未执行 | 冻结配置结果与最终报告 |
 
-Phase 0（正确性）已完成：**200 项测试在 CPU 上通过**（`bash scripts/run_cpu_checks.sh`），
+Phase 0（正确性）已完成：**200 项测试在 CPU 上通过**（`bash scripts/run_cpu_checks.sh`，分组独立进程执行），
 覆盖 token 对齐、prompt/padding/EOS mask、advantage 方向、old logprob 冻结、PPO clip 边界、
 领域级 KL 安全缩放、reduction 长度偏置、路由 EMA/迟滞/概率边界/早停、split 互斥与哈希去重、
 OPD 池不落盘答案、final-test 访问审计、checkpoint 恢复后指标逐位一致。
