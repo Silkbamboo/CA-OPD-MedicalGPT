@@ -1,0 +1,22 @@
+{
+  "count": 40,
+  "category_distribution": {
+    "allergy_safety": 4,
+    "antibiotic_safety": 4,
+    "cardiac_delay": 4,
+    "dehydration_safety": 4,
+    "mental_health_safety": 4,
+    "missed_dose_safety": 4,
+    "pediatric_med_safety": 4,
+    "pregnancy_safety": 4,
+    "stroke_delay": 4,
+    "warfarin_safety": 4
+  },
+  "triage_distribution": {
+    "emergency": 8,
+    "home_observe": 16,
+    "outpatient": 4,
+    "urgent": 12
+  },
+  "purpose": "Stress-test unsafe advice, delayed escalation, and medication-safety failure modes for GRPO reward evaluation."
+}

@@ -1,0 +1,147 @@
+MedicalGPT GRPO Full vs Reward V2 对比评测报告
+生成时间: 2026-03-28
+
+一、对比对象
+1. full
+- 模型目录: /root/MedicalGPT/outputs-medical-grpo-qwen2.5-1.5b-merged-final
+- 含义: 旧版 GRPO full reward 配方
+
+2. grpo_v2
+- 模型目录: /root/MedicalGPT/outputs-medical-grpo-v2-qwen2.5-1.5b-merged-final
+- 含义: 新版 reward v2 配方，核心调整为:
+  - 移除默认 mention_bonus
+  - 下调 actionability 权重到 0.7
+  - 上调 safety_penalty 权重到 1.2
+  - triage_reward 改为分级奖励
+  - safety_penalty 增加高风险延迟和低分诊惩罚
+
+二、评测集
+1. benchmark300
+- 文件: /root/MedicalGPT/eval/medical_benchmark_300.jsonl
+- 规模: 300
+- 组成: 150 条专项集 + 150 条自然咨询代理集
+- 作用: 综合评估整体医疗问答、分诊、红旗识别和可操作性
+
+2. safety150
+- 文件: /root/MedicalGPT/eval/medical_safety_stress_150.jsonl
+- 规模: 150
+- 作用: 专门评测安全性压力场景，包括错误用药、延迟就医、危险建议等
+
+三、benchmark300 结果
+full:
+- overall_score: 0.442708
+- triage_score: 0.266667
+- redflag_score: 0.436667
+- actionability_score: 0.507500
+- unsafe_rate: 0.000000
+- triage_exact_acc: 0.160000
+- urgent_emergency_no_undertriage_rate: 0.546392
+
+grpo_v2:
+- overall_score: 0.439292
+- triage_score: 0.263333
+- redflag_score: 0.430000
+- actionability_score: 0.505833
+- unsafe_rate: 0.000000
+- triage_exact_acc: 0.166667
+- urgent_emergency_no_undertriage_rate: 0.587629
+
+benchmark300 差值(grpo_v2 - full):
+- overall_score: -0.003417
+- triage_score: -0.003333
+- redflag_score: -0.006667
+- actionability_score: -0.001667
+- unsafe_rate: +0.000000
+- triage_exact_acc: +0.006667
+- urgent_emergency_no_undertriage_rate: +0.041237
+
+四、safety150 结果
+full:
+- overall_score: 0.454806
+- triage_score: 0.296667
+- redflag_score: 0.495556
+- actionability_score: 0.505000
+- unsafe_rate: 0.140000
+- triage_exact_acc: 0.233333
+- urgent_emergency_no_undertriage_rate: 0.520000
+
+grpo_v2:
+- overall_score: 0.451278
+- triage_score: 0.283333
+- redflag_score: 0.501111
+- actionability_score: 0.506667
+- unsafe_rate: 0.140000
+- triage_exact_acc: 0.200000
+- urgent_emergency_no_undertriage_rate: 0.520000
+
+safety150 差值(grpo_v2 - full):
+- overall_score: -0.003528
+- triage_score: -0.013333
+- redflag_score: +0.005556
+- actionability_score: +0.001667
+- unsafe_rate: +0.000000
+- triage_exact_acc: -0.033333
+- urgent_emergency_no_undertriage_rate: +0.000000
+
+五、结果解读
+1. benchmark300 上，grpo_v2 没有整体超过 full。
+- overall_score 从 0.4427 下降到 0.4393
+- triage_score、redflag_score、actionability_score 也都小幅下降
+- 但 urgent/emergency_no_undertriage_rate 从 0.5464 提升到 0.5876
+这说明 reward v2 的高风险不过度漏诊倾向变强了，但整体问答质量和泛化得分没有同步提升。
+
+2. safety150 上，grpo_v2 也没有超过 full。
+- overall_score 从 0.4548 下降到 0.4513
+- triage_score、triage_exact_acc 明显下降
+- redflag_score 和 actionability_score 略有提升
+- unsafe_rate 仍然完全相同，都是 0.14
+这说明新版 safety_penalty 虽然在训练内有信号，但在外部安全压力测试上还没有转化成更低的危险建议率。
+
+3. reward v2 的真实效果更像是“偏向高风险升级”，而不是“整体更优”。
+- 从 benchmark300 看，高风险 no-undertriage 提高了
+- 但同时 overall 没提高，说明这版 reward 可能把模型往更保守、更强调升级处理的方向推了
+- 这种方向在医疗上未必错，但会带来整体校准下降的代价
+
+4. 当前最难的问题依然是安全性与分诊边界，而不是红旗识别本身。
+- redflag 在 v2 上没有崩，说明这部分能力主干还在
+- unsafe_rate 没改善，说明 safety_penalty 设计或外部规则仍不够强
+- triage 只提升了高风险不过度漏诊，但没有带来更好的整体分诊准确性
+
+六、结论
+1. 目前 full 仍然是更稳的主 baseline。
+2. grpo_v2 不能作为“全面替代 full”的版本。
+3. grpo_v2 唯一明确的正向信号，是 benchmark300 上 urgent/emergency 场景的不过度漏诊率提升。
+4. 当前 reward v2 还没有达到“值得直接替换旧版 full”的程度。
+
+七、建议的下一步
+建议不要继续直接加大训练步数，而是优先做下面三件事：
+
+1. 重构 reward v3，而不是继续沿用当前 v2
+- 保留 redflag 主干
+- 保留 triage，但降低其对整体“保守升级”的副作用
+- 重新设计 safety_penalty，不只靠关键词命中
+- actionability 维持较低权重即可
+- mention_bonus 继续不启用
+
+2. 做人工复核
+- 从 benchmark300 和 safety150 各抽 30-50 条
+- 对比 full 与 grpo_v2 做盲评
+- 重点看:
+  - 安全性
+  - 分诊准确性
+  - 回答完整性
+  - 是否过度升级
+当前自动规则已经接近分辨率上限，人工复核是下一步必要工作。
+
+3. 如果继续做 reward 版本迭代，建议每次只改 1-2 个关键点
+当前 reward 版本变化过多，会让因果解释变弱。下一版更合理的做法是：
+- 只改 safety_penalty
+- 或只改 triage_reward
+然后与 full 单独比较。
+
+八、面试表达建议
+你可以把这轮结果讲成：
+- 我没有只看训练内 reward，而是把新版 reward 放到统一 benchmark 和 safety stress set 上做外部验证
+- 结果发现 reward v2 虽然提高了高风险场景的不过度漏诊率，但整体分诊和安全指标没有超过旧版 full
+- 这说明医疗 RL 的关键不只是“加大惩罚”或“让模型更保守”，而是 reward 是否能在高风险升级和整体分诊校准之间取得平衡
+- 这也是我下一步继续做 reward v3 和人工盲评的依据

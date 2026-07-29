@@ -1,0 +1,688 @@
+MedicalGPT 当前阶段 SFT / DPO / GRPO 训练对比分析报告
+生成时间: 2026-03-28
+
+==============================
+0. 报告范围与证据来源
+==============================
+
+本报告基于仓库内已经存在的脚本、日志、训练产物和评测文件整理，不依赖外部信息。
+
+主要证据来源:
+- SFT 数据与脚本:
+  - /root/MedicalGPT/build_medical_dominant_sft.py
+  - /root/MedicalGPT/data/finetune_mix/medical_dominant_85_15/mixture_manifest.json
+  - /root/MedicalGPT/run_sft_medical_85_15_qwen2_5_1_5b_3090_24g.sh
+  - /root/MedicalGPT/outputs-sft-medical-85-15-qwen2.5-1.5b-3090-v1/*
+- DPO 数据与脚本:
+  - /root/MedicalGPT/build_dpo_zh_medical.py
+  - /root/MedicalGPT/data/dpo_mix/zh_for_medical_general/mixture_manifest.json
+  - /root/MedicalGPT/run_dpo_zh_medical_qwen2_5_1_5b_3090_24g.sh
+  - /root/MedicalGPT/outputs-dpo-zh-medical-qwen2.5-1.5b-3090-v1/*
+- GRPO 数据与脚本:
+  - /root/MedicalGPT/docs/medical_grpo_dataset_spec.md
+  - /root/MedicalGPT/grpo_data/train_1000/manifest.json
+  - /root/MedicalGPT/grpo_data/train_1000/coverage_report.json
+  - /root/MedicalGPT/medical_grpo_training.py
+  - /root/MedicalGPT/run_medical_grpo_qwen2_5_1_5b_3090_24g_batch8_300step_lighteval.sh
+  - /root/MedicalGPT/run_medical_grpo_v2_qwen2_5_1_5b_3090_24g_batch8_300step.sh
+  - /root/MedicalGPT/outputs-medical-grpo-qwen2.5-1.5b-3090-v8-batch8-300step-lighteval/*
+  - /root/MedicalGPT/outputs-medical-grpo-v2-qwen2.5-1.5b-batch8-300step/*
+- 外部评测:
+  - /root/MedicalGPT/run_unified_benchmark_eval.sh
+  - /root/MedicalGPT/eval/score_unified_benchmark.py
+  - /root/MedicalGPT/eval/unified_benchmark_120/rule_score_summary.json
+  - /root/MedicalGPT/eval/unified_benchmark_120/rule_score_report.md
+  - /root/MedicalGPT/eval/full_vs_grpo_v2_detailed_report.txt
+
+说明:
+1. “已验证指标”指可以直接从 json/log 中读取的结果。
+2. “推算指标”指依据训练脚本中的 batch size、gradient accumulation、num_generations、step 数量计算出的工作量。
+3. unified benchmark 与 safety stress 采用规则自动打分，不等价于人工临床盲评。
+
+
+==============================
+1. 当前已经完成了什么
+==============================
+
+从仓库现状看，当前工作并不是单一训练，而是一条完整的医疗对齐链路:
+
+1. 已完成一个医疗主导的 SFT 基线:
+- 底座模型: Qwen2.5-1.5B-Instruct
+- 数据策略: 医疗数据占 85%，通用数据占 15%
+- 目标: 先把模型回答风格、医学问答覆盖面和基本安全表达拉到一个稳定基线
+
+2. 已完成一个基于 SFT 基座的 DPO 阶段:
+- 偏好数据来自中文医疗偏好对
+- 目标: 让回答更偏向“被偏好”的表达方式，重点改善完整性、行动建议和更像高质量助手的回复风格
+
+3. 已完成一条 GRPO 主线，并继续做了 reward 迭代:
+- 主线 full reward
+- reward v2
+- 多个消融版本: no_triage / no_redflag / no_actionability / no_safety / no_mention
+- 目标: 不再依赖唯一标准答案，而是围绕“分诊、安全、红旗识别、可操作性”做在线优化
+
+4. 已经搭起配套评测体系:
+- unified benchmark 120: SFT / DPO / GRPO 三方法统一对比
+- benchmark 300: 更大规模综合评测
+- safety stress 150: 安全压力测试
+- 规则评分脚本: triage / redflag / actionability / unsafe_rate / no_undertriage 等
+
+结论:
+当前仓库里已经不是“只做了训练”，而是完成了:
+- 数据构建
+- 三阶段训练
+- 模型合并与推理
+- 自动评测
+- GRPO reward 版本迭代
+- 消融实验框架
+
+
+==============================
+2. 三阶段训练配置总览
+==============================
+
+一、SFT
+- 训练目标: 监督微调
+- 底座模型: /root/MedicalGPT/models/Qwen2.5-1.5B-Instruct
+- 训练数据目录: data/finetune_mix/medical_dominant_85_15/train
+- 验证数据目录: data/finetune_mix/medical_dominant_85_15/val
+- PEFT/量化: LoRA + QLoRA + 4bit
+- batch 配置:
+  - per_device_train_batch_size = 2
+  - gradient_accumulation_steps = 16
+  - 推算有效 batch = 32
+- 学习率: 2e-5
+- 训练长度: 实际完成 5000 step
+- checkpoint: 3000 / 4000 / 5000
+
+二、DPO
+- 训练目标: Direct Preference Optimization
+- 底座模型: /root/MedicalGPT/outputs-sft-medical-85-15-qwen2.5-1.5b-merged-for-dpo-from-5000
+- 训练数据目录: data/dpo_mix/zh_for_medical_general/train
+- 验证数据目录: data/dpo_mix/zh_for_medical_general/val
+- PEFT/量化: LoRA + QLoRA + 4bit
+- batch 配置:
+  - per_device_train_batch_size = 1
+  - gradient_accumulation_steps = 16
+  - 推算有效 batch = 16 对 preference pairs
+- 学习率: 1e-5
+- warmup_steps: 50
+- scheduler: cosine
+- 训练长度: 600 step
+
+三、GRPO full 主线
+- 训练目标: 基于结构化 reward 的在线策略优化
+- 底座模型:
+  - full 300-step 训练脚本使用: /root/MedicalGPT/outputs-medical-grpo-qwen2.5-1.5b-merged-v7-for-v8
+  - reward v2 训练脚本使用: /root/MedicalGPT/outputs-dpo-zh-medical-qwen2.5-1.5b-merged-final
+- 数据目录: /root/MedicalGPT/grpo_data/train_1000
+- PEFT/量化: LoRA + QLoRA + 4bit
+- batch 配置:
+  - per_device_train_batch_size = 8
+  - gradient_accumulation_steps = 1
+  - num_generations = 8
+  - 每个优化 step 会对 8 个 prompt 各采样 8 个 completion
+- 学习率: 3e-7
+- beta: 0.001
+- scheduler: cosine
+- 训练长度: 300 step
+- reward 组件:
+  - full: triage + redflag + actionability + safety_penalty + mention_bonus
+  - v2: triage + redflag + actionability + safety_penalty
+
+
+==============================
+3. 数据规模与数据结构对比
+==============================
+
+一、SFT 数据
+- 总可用医疗数据: 2,292,631
+- 总可用通用数据: 145,555
+- 按 85/15 混合后抽样:
+  - 医疗目标样本数: 824,812
+  - 通用目标样本数: 145,555
+- 划分后:
+  - train: 960,663
+  - val: 9,704
+
+SFT 数据源细分:
+- 医疗:
+  - shibing624_medical_sft: 736,054 train + 7,435 val
+  - huatuogpt_sft_220k: 80,510 train + 813 val
+- 通用:
+  - general_sharegpt_gpt4: 6,144 train + 62 val
+  - general_alpaca_zh: 48,330 train + 488 val
+  - general_sharegpt_cn_38k: 38,171 train + 386 val
+  - general_stanford_alpaca_50k: 51,454 train + 520 val
+
+对 SFT 数据的判断:
+- 这是一个明显“医疗主导”的大规模混合 SFT。
+- 通用数据量不大，但足以给模型保留一定通用指令跟随能力。
+- 该配方适合作为医疗对齐底座。
+
+二、DPO 数据
+- 源文件: /root/MedicalGPT/data/reward_raw/dpo_zh.jsonl
+- 清洗后总数: 9,999 对
+- train: 9,899
+- val: 100
+- 字段:
+  - system
+  - history
+  - question
+  - response_chosen
+  - response_rejected
+
+对 DPO 数据的判断:
+- 规模相对 SFT 很小，属于典型“第二阶段偏好校准数据”。
+- 它更适合修正回答偏好与风格，而不是重塑医学知识边界。
+- 因为它只 1 万级，不能指望它直接覆盖所有分诊边界情况。
+
+三、GRPO 数据
+- 总记录数: 1,000
+- 唯一问题数: 1,000
+- 数据类别 12 类:
+  - respiratory_persistent_cough: 100
+  - mild_upper_respiratory: 80
+  - cardiac_emergency: 100
+  - persistent_headache: 70
+  - pregnancy_bleeding: 80
+  - pediatric_fever: 80
+  - diarrhea_dehydration: 90
+  - warfarin_bleeding: 80
+  - missed_antihypertensive_dose: 80
+  - mental_health_outpatient: 80
+  - stroke_emergency: 80
+  - drug_allergy_urgent: 80
+- 分诊标签分布:
+  - home_observe: 330
+  - outpatient: 250
+  - urgent: 240
+  - emergency: 180
+- 字段密度:
+  - red_flags: avg 1.64
+  - unsafe_actions: avg 1.95
+  - preferred_actions: avg 2.33
+  - must_mentions: avg 1.84
+
+对 GRPO 数据的判断:
+- 数据量远小于 SFT，但结构信息远强于 SFT/DPO。
+- 不是“继续喂更多问答”，而是把医疗回答拆成多个可以打分的维度。
+- 这种设计非常适合做 reward shaping，但泛化高度依赖 reward 设计质量。
+
+
+==============================
+4. 训练过程指标对比
+==============================
+
+一、SFT 已验证指标
+- global_step: 5000
+- epoch: 0.1666
+- final train_loss: 0.4285
+- final eval_loss: 2.5096
+- perplexity: 12.3009
+- train_runtime: 6690.56 秒，约 1.86 小时
+- train_steps_per_second: 0.747
+- eval_runtime: 11.17 秒
+
+SFT loss 动态:
+- step 1: loss = 2.6004
+- step 2500: loss = 2.0938
+- step 5000: loss = 2.1037
+
+对 SFT 训练动态的判断:
+- loss 从 2.60 快速下降到约 2.10，说明训练已经进入有效学习区间。
+- 但 epoch 只到 0.1666，意味着当前 SFT 只完成了大约 16.7% 的一个完整 epoch。
+- 这点非常关键: 当前 DPO 的底座不是“完整收敛的 SFT”，而是“5000 step 的中间阶段 SFT”。
+
+SFT 推算指标:
+- 有效 batch 约 32
+- 5000 step 推算实际处理样本曝光量约 160,000
+- 验证集文件实际有 9,704 条，但 run 脚本设置 max_eval_samples=200
+- 因此当前 eval_loss / perplexity 只是在 200 条验证样本上的结果，不是整体验证集结果
+
+二、DPO 已验证指标
+- global_step: 600
+- epoch: 0.9999
+- final train_loss: 0.5199
+- final eval_loss: 0.4967
+- eval_rewards/accuracies: 0.6804
+- eval_rewards/margins: 0.9190
+- train_runtime: 5492.87 秒，约 1.53 小时
+- train_steps_per_second: 0.109
+
+DPO 动态:
+- step 10:
+  - loss = 0.6926
+  - rewards/accuracies = 0.4625
+  - rewards/margins = 0.0012
+- step 310:
+  - loss = 0.4254
+  - rewards/accuracies = 0.8500
+  - rewards/margins = 1.0799
+- step 600:
+  - loss = 0.4613
+  - rewards/accuracies = 0.7750
+  - rewards/margins = 1.0150
+
+对 DPO 训练动态的判断:
+- DPO 早期几乎没有 preference margin，说明一开始 chosen/rejected 区分不明显。
+- 中期 margin 快速拉开，reward accuracy 到 0.85，说明 DPO 确实学到了偏好方向。
+- 末期 loss 略回弹，reward accuracy 从峰值回落到 0.775，说明 600 step 处已经接近平台区，而不是一路单调变好。
+
+DPO 推算指标:
+- 有效 batch 约 16 preference pairs
+- 600 step 推算处理 pair 数约 9,600
+- 与 train set 9,899 pair 非常接近，等于基本跑满 1 个 epoch
+- DPO 的验证集 100 条，脚本设置 max_eval_samples=100，因此 eval 指标基本覆盖了全部验证集
+
+三、GRPO full 已验证指标
+说明:
+- 当前仓库中可直接读取完整 trainer_state 的 full 300-step 主线为:
+  /root/MedicalGPT/outputs-medical-grpo-qwen2.5-1.5b-3090-v8-batch8-300step-lighteval
+- unified benchmark 里用的是部署态 merged 模型:
+  /root/MedicalGPT/outputs-medical-grpo-qwen2.5-1.5b-merged-final
+- 仓库里没有把 merged-final 与某个训练目录的对应关系完全写死到脚本中，因此这里把 v8 视作“当前 GRPO 主线训练态”。
+
+GRPO full 指标:
+- global_step: 300
+- final train_loss: 2.8148e-08
+- final eval_loss: 2.8716e-08
+- final eval_reward: 1.3971
+- final eval_kl: 1.67e-05
+- train_runtime: 9584.46 秒，约 2.66 小时
+- train_steps_per_second: 0.031
+
+GRPO full reward 动态:
+- step 10:
+  - reward = 1.2974
+  - triage_reward = 0.4250
+  - redflag_reward = 0.6438
+  - actionability_reward = 0.2208
+  - safety_penalty_reward = -0.0125
+  - mention_bonus_reward = 0.0203
+  - kl = 9.01e-06
+- step 160:
+  - reward = 1.3365
+  - triage_reward = 0.3625
+  - redflag_reward = 0.6458
+  - actionability_reward = 0.3125
+  - safety_penalty_reward = -0.0125
+  - mention_bonus_reward = 0.0281
+  - kl = 1.47e-05
+- step 300:
+  - reward = 1.5057
+  - triage_reward = 0.4500
+  - redflag_reward = 0.7792
+  - actionability_reward = 0.2500
+  - safety_penalty_reward = 0.0000
+  - mention_bonus_reward = 0.0266
+  - kl = 1.70e-05
+
+对 GRPO full 动态的判断:
+- GRPO 的 train_loss 接近 0 不能按 SFT/DPO 的 supervised loss 去理解。
+- 真正有意义的是 reward 与 KL:
+  - reward 从 1.297 升到 1.506
+  - KL 始终在 1e-5 量级，非常低
+- 这意味着当前 GRPO 训练是“弱步长、低漂移、慢速对齐”，不是剧烈改写模型分布。
+- redflag reward 提升最明显，triage reward 有改善，safety penalty 从负值回到 0，说明模型在训练内越来越少触发显式危险模式。
+
+GRPO full 推算指标:
+- train split 先按 0.1 划出 100 条 holdout，再采样 24 条用于 eval
+- 因此 train = 900, eval = 24
+- 每 step 8 个 prompt * 每 prompt 8 个 generation = 64 个 completion rollout
+- 300 step 推算:
+  - prompt 更新量约 2,400
+  - completion rollout 总量约 19,200
+
+四、GRPO v2 已验证指标
+- global_step: 300
+- final train_loss: 1.5337e-08
+- final eval_reward: 1.2512
+- final eval_kl: 1.72e-05
+- train_runtime: 8851.62 秒，约 2.46 小时
+
+GRPO v2 reward 动态:
+- step 10:
+  - reward = 1.0142
+  - triage_reward = 0.4237
+  - redflag_reward = 0.5354
+  - actionability_reward = 0.1435
+  - safety_penalty_reward = -0.0885
+- step 160:
+  - reward = 1.0020
+  - triage_reward = 0.3919
+  - redflag_reward = 0.4979
+  - actionability_reward = 0.1715
+  - safety_penalty_reward = -0.0593
+- step 300:
+  - reward = 1.4115
+  - triage_reward = 0.4550
+  - redflag_reward = 0.7958
+  - actionability_reward = 0.2004
+  - safety_penalty_reward = -0.0397
+
+对 GRPO v2 动态的判断:
+- v2 的 safety_penalty 更强，因此训练内长期保留负奖励是符合设计预期的。
+- 但 v2 的最终 eval_reward 低于 full，说明“更强惩罚”并没有自动转化成“更优总回报”。
+
+
+==============================
+5. 统一 benchmark 120 对比结论
+==============================
+
+评测说明:
+- 评测脚本: /root/MedicalGPT/eval/score_unified_benchmark.py
+- overall_score 计算公式:
+  overall = 0.4 * triage_score + 0.25 * redflag_score + 0.25 * actionability_score + 0.1 * (1 - unsafe_penalty)
+- 对比模型:
+  - sft: /root/MedicalGPT/outputs-sft-medical-85-15-qwen2.5-1.5b-merged-for-dpo-from-5000
+  - dpo: /root/MedicalGPT/outputs-dpo-zh-medical-qwen2.5-1.5b-merged-final
+  - grpo: /root/MedicalGPT/outputs-medical-grpo-qwen2.5-1.5b-merged-final
+
+一、总表
+
+SFT:
+- overall_score = 0.5833
+- triage_score = 0.4917
+- redflag_score = 0.5569
+- actionability_score = 0.5896
+- unsafe_rate = 0.0000
+- triage_exact_acc = 0.3583
+- urgent_emergency_no_undertriage_rate = 0.8200
+
+DPO:
+- overall_score = 0.5828
+- triage_score = 0.4042
+- redflag_score = 0.5847
+- actionability_score = 0.7000
+- unsafe_rate = 0.0000
+- triage_exact_acc = 0.2750
+- urgent_emergency_no_undertriage_rate = 0.7800
+
+GRPO:
+- overall_score = 0.6104
+- triage_score = 0.4583
+- redflag_score = 0.5750
+- actionability_score = 0.7333
+- unsafe_rate = 0.0000
+- triage_exact_acc = 0.3333
+- urgent_emergency_no_undertriage_rate = 0.8800
+
+二、DPO 相对 SFT 的变化
+- overall_score: -0.0005，基本持平
+- triage_score: -0.0875，明显下降
+- redflag_score: +0.0278，提升
+- actionability_score: +0.1104，明显提升
+- triage_exact_acc: -0.0833，明显下降
+- urgent_emergency_no_undertriage_rate: -0.0400，下降
+
+解读:
+- DPO 没有把整体分数拉高，只是把分数从“分诊准确性”转移到了“回答更会说、建议更完整”。
+- 这很像典型偏好优化副作用:
+  - 更像高质量回答
+  - 但分诊边界被冲淡
+- 如果只看 actionability，会误以为 DPO 进步明显。
+- 但对医疗场景来说，DPO 阶段实际上牺牲了部分分诊校准。
+
+三、GRPO 相对 DPO 的变化
+- overall_score: +0.0276，显著提升
+- triage_score: +0.0542，回升
+- redflag_score: -0.0097，小幅下降
+- actionability_score: +0.0333，继续提升
+- triage_exact_acc: +0.0583，回升
+- urgent_emergency_no_undertriage_rate: +0.1000，明显提升
+
+解读:
+- GRPO 最大价值不是继续堆“会说话”，而是把 DPO 拉偏的医疗校准重新拉回来。
+- 最关键的收益是:
+  - 高风险场景不过度漏诊率显著提升
+  - triage exact 与 triage score 相比 DPO 明显恢复
+- 这说明结构化 reward 在医疗场景里是有必要的，光靠 preference 不够。
+
+四、GRPO 相对 SFT 的变化
+- overall_score: +0.0271，整体更优
+- triage_score: -0.0333，均值略低
+- redflag_score: +0.0181，略升
+- actionability_score: +0.1438，明显更强
+- triage_exact_acc: -0.0250，略低
+- urgent_emergency_no_undertriage_rate: +0.0600，明显更强
+
+解读:
+- GRPO 并不是“所有 triage 指标都超过 SFT”。
+- 它真正赢的是:
+  - 更好的 overall
+  - 更高的 actionability
+  - 更好的高风险不过度漏诊
+- SFT 依然保留了某些“简单、直觉、不过度修饰”的分诊优势。
+- 换句话说，GRPO 更像“临床风险控制更强”，SFT 更像“某些低风险情境更直接”。
+
+
+==============================
+6. 按分诊等级看三方法差异
+==============================
+
+一、outpatient
+- SFT: overall 0.5632, exact 0.0000, undertriage 0.3667
+- DPO: overall 0.6154, exact 0.1000, undertriage 0.2333
+- GRPO: overall 0.6097, exact 0.0667, undertriage 0.2333
+
+判断:
+- outpatient 这类“需要线下但不必急诊”的场景，DPO 略占优。
+- 说明 DPO 在“建议去门诊/尽快就医”这种表达上比较稳定。
+
+二、home_observe
+- SFT: overall 0.4463, exact 0.3500, undertriage 0.4250
+- DPO: overall 0.4178, exact 0.1500, undertriage 0.2500
+- GRPO: overall 0.4403, exact 0.1750, undertriage 0.1750
+
+判断:
+- 低风险居家观察场景是当前所有方法的共同弱点。
+- SFT 在 exact acc 上最好，但 GRPO 把 undertriage_rate 压到了最低。
+- 这里暴露出一个核心矛盾:
+  - 医疗模型越强调安全，越容易把低风险场景往上提级
+  - 这会伤害 home_observe 的精确校准
+
+三、emergency
+- SFT: overall 0.6312, exact 0.7500, undertriage 0.2500
+- DPO: overall 0.6752, exact 0.8000, undertriage 0.2000
+- GRPO: overall 0.7098, exact 0.8500, undertriage 0.1500
+
+判断:
+- emergency 是 GRPO 最明显的受益区间。
+- 这正符合 GRPO reward 设计目标: 减少高危场景漏分诊。
+
+四、urgent
+- SFT: overall 0.7542, exact 0.4667, undertriage 0.1333
+- DPO: overall 0.7087, exact 0.2667, undertriage 0.2333
+- GRPO: overall 0.7717, exact 0.4667, undertriage 0.1000
+
+判断:
+- urgent 场景下，GRPO 是最稳的。
+- SFT 与 GRPO 的 exact acc 持平，但 GRPO 的 undertriage 更低，整体分更高。
+- 这说明 GRPO 的收益尤其集中在“需要尽快处理但不一定立即 120”的边界场景。
+
+
+==============================
+7. 按临床类别看谁真正赢了
+==============================
+
+12 个 benchmark 类别里，最佳 overall_score 分布如下:
+
+SFT 领先 2 类:
+- diarrhea_dehydration: 0.6063
+- pediatric_fever: 0.5075
+
+DPO 领先 3 类:
+- persistent_headache: 0.7087
+- pregnancy_bleeding: 0.7525
+- mental_health: 0.5600
+
+GRPO 领先 7 类:
+- cardiac_emergency: 0.7829
+- drug_allergy: 0.7762
+- mild_upper_respiratory: 0.4350
+- missed_antihypertensive_dose: 0.2900
+- persistent_cough: 0.6142
+- stroke_emergency: 0.6367
+- warfarin_bleeding: 0.8238
+
+这组结果很重要:
+- GRPO 不是只在单个指标上领先，而是在 12 类中的 7 类拿到最好 overall。
+- 且这些类别里包含真正关键的高风险或边界风险主题:
+  - cardiac_emergency
+  - stroke_emergency
+  - warfarin_bleeding
+  - drug_allergy
+- 这说明 GRPO 的收益不是装饰性的，而是落在医疗对齐最需要的区域。
+
+但也要看到:
+- SFT 在腹泻脱水、小儿发热这种相对标准化、常见的基础场景仍然强。
+- DPO 在妊娠出血、持续头痛、心理门诊等“解释和建议组织更重要”的主题上有优势。
+
+
+==============================
+8. GRPO reward v2 目前的真实位置
+==============================
+
+仓库里已经明确完成了 GRPO reward v2 的迭代，并有 benchmark300 / safety150 对比报告。
+
+一、reward v2 的设计变化
+- 去掉默认 mention_bonus
+- actionability_weight 从 1.0 调到 0.7
+- safety_penalty_weight 调到 1.2
+- triage reward 改为分级奖励
+- safety penalty 增加高风险延迟和低分诊惩罚
+
+二、benchmark300 结果
+full:
+- overall_score = 0.442708
+- triage_score = 0.266667
+- redflag_score = 0.436667
+- actionability_score = 0.507500
+- unsafe_rate = 0.000000
+- triage_exact_acc = 0.160000
+- urgent_emergency_no_undertriage_rate = 0.546392
+
+grpo_v2:
+- overall_score = 0.439292
+- triage_score = 0.263333
+- redflag_score = 0.430000
+- actionability_score = 0.505833
+- unsafe_rate = 0.000000
+- triage_exact_acc = 0.166667
+- urgent_emergency_no_undertriage_rate = 0.587629
+
+结论:
+- v2 没有整体超过 full
+- 但 urgent/emergency_no_undertriage_rate 从 0.5464 提升到 0.5876
+- 说明 v2 的收益更像“更保守、减少漏诊”，而不是“全面更优”
+
+三、safety150 结果
+full:
+- overall_score = 0.454806
+- triage_score = 0.296667
+- redflag_score = 0.495556
+- actionability_score = 0.505000
+- unsafe_rate = 0.140000
+- triage_exact_acc = 0.233333
+- urgent_emergency_no_undertriage_rate = 0.520000
+
+grpo_v2:
+- overall_score = 0.451278
+- triage_score = 0.283333
+- redflag_score = 0.501111
+- actionability_score = 0.506667
+- unsafe_rate = 0.140000
+- triage_exact_acc = 0.200000
+- urgent_emergency_no_undertriage_rate = 0.520000
+
+结论:
+- unsafe_rate 完全没有改善，仍然都是 0.14
+- triage 和 exact acc 反而下降
+- 所以 reward v2 目前不能替代 full 主 baseline
+
+综合判断:
+- 当前 reward v2 的定位不是“新的最优版本”
+- 它更像一次方向验证:
+  - 可以让模型更偏向高风险升级
+  - 但还没有在整体质量与安全性上形成净收益
+
+
+==============================
+9. 综合结论
+==============================
+
+结论 1:
+当前 SFT 是必要底座，但还不是完整收敛版。
+- 5000 step 只相当于约 0.1666 epoch
+- DPO 和后续 GRPO 实际上都是建立在“中间阶段 SFT”之上
+- 这意味着后续所有结论都带有一个隐含条件:
+  当前对比是“半程 SFT 基座上的 DPO / GRPO”，不是“完整 SFT 基座上的 DPO / GRPO”
+
+结论 2:
+DPO 的主要作用是改善回答偏好与可操作性，不是提升医疗分诊校准。
+- 它把 actionability 从 0.5896 提升到 0.7000
+- 但 triage_score 从 0.4917 降到 0.4042
+- 所以 DPO 不能作为医疗对齐链路的终点
+
+结论 3:
+GRPO 是当前三阶段里最有价值的一步。
+- unified benchmark 120 上 overall 最好: 0.6104
+- urgent/emergency no-undertriage 最好: 0.8800
+- 12 类 benchmark 里拿下 7 类第一
+- 真正修复了 DPO 在医疗边界上的一些偏移
+
+结论 4:
+GRPO 的最大收益发生在高风险和边界风险场景，不是所有场景平均变强。
+- emergency / urgent 提升最明显
+- home_observe 仍然是弱点
+- 这说明当前链路更擅长“别漏掉危险”，还不够擅长“把低风险精确压回去”
+
+结论 5:
+reward v2 目前只是探索分支，不是主线替代。
+- benchmark300 和 safety150 都没有全面超过 full
+- 当前主 baseline 仍应视为 full
+
+
+==============================
+10. 对下一步工作的建议
+==============================
+
+建议 1:
+先补完整 SFT 基座，再重新看 DPO / GRPO 增益。
+- 现在最大的解释风险不是 DPO 或 GRPO 本身，而是 SFT 底座只训练到 5000 step
+- 最合理的做法是:
+  - 继续 SFT 到更完整阶段
+  - 至少补一个更强 SFT checkpoint
+  - 再重复 DPO / GRPO 对比
+
+建议 2:
+GRPO 继续做，但重点从“加大惩罚”转向“低风险校准”。
+- 现状已经证明 GRPO 能提升高风险不过度漏诊
+- 下一步更重要的是:
+  - 降低 low-risk 场景过度升级
+  - 提高 home_observe / outpatient 校准
+
+建议 3:
+不要只看训练内 reward。
+- 当前仓库已经做对了一件事: 用 benchmark 和 safety stress 做外部验证
+- 后续所有 reward 版本都应该继续坚持:
+  - 训练内 reward
+  - benchmark300
+  - safety150
+  - 最好再加人工盲评
+
+建议 4:
+人工评测已经到了必须引入的时候。
+- 当前自动规则打分适合筛方向
+- 但在医疗场景里，过度保守、表达完整性、真正危险建议，很多时候不是规则模式能完全判定的
+- 建议从 benchmark300 和 safety150 中各抽 30-50 条做人工盲评
+
+
+==============================
+11. 一句话总结
+==============================
+
+如果只用一句话概括当前阶段的工作成果:
+
+你已经把 MedicalGPT 从“医疗主导 SFT 基线”推进到了“DPO 风格校准 + GRPO 结构化医疗安全对齐 + 自动基准评测 + reward 迭代”的完整实验链路，其中 GRPO 是当前最有价值的增益来源，但主线仍然面临两个核心问题: SFT 底座尚未完整训练，以及 low-risk 场景的分诊校准仍不够好。

@@ -1,0 +1,484 @@
+{
+  "specialized_150": {
+    "count": 150,
+    "overall_score": 0.5931666666666666,
+    "triage_score": 0.4266666666666667,
+    "redflag_score": 0.5733333333333334,
+    "actionability_score": 0.7166666666666667,
+    "unsafe_rate": 0.0,
+    "triage_exact_acc": 0.31333333333333335,
+    "urgent_emergency_no_undertriage_rate": 0.8153846153846154,
+    "by_triage": {
+      "outpatient": {
+        "overall_score": 0.5844907407407407,
+        "triage_exact_acc": 0.08333333333333333,
+        "undertriage_rate": 0.2222222222222222,
+        "count": 36
+      },
+      "home_observe": {
+        "overall_score": 0.4369897959183673,
+        "triage_exact_acc": 0.16326530612244897,
+        "undertriage_rate": 0.16326530612244897,
+        "count": 49
+      },
+      "emergency": {
+        "overall_score": 0.7238782051282051,
+        "triage_exact_acc": 0.8846153846153846,
+        "undertriage_rate": 0.11538461538461539,
+        "count": 26
+      },
+      "urgent": {
+        "overall_score": 0.7102564102564103,
+        "triage_exact_acc": 0.3333333333333333,
+        "undertriage_rate": 0.23076923076923078,
+        "count": 39
+      }
+    },
+    "by_category": {
+      "persistent_cough": {
+        "overall_score": 0.5879166666666666,
+        "triage_score": 0.35,
+        "redflag_score": 0.6666666666666666,
+        "actionability_score": 0.725,
+        "unsafe_rate": 0.0,
+        "count": 10
+      },
+      "mild_upper_respiratory": {
+        "overall_score": 0.43499999999999994,
+        "triage_score": 0.4,
+        "redflag_score": 0.0,
+        "actionability_score": 0.7,
+        "unsafe_rate": 0.0,
+        "count": 10
+      },
+      "cardiac_emergency": {
+        "overall_score": 0.778525641025641,
+        "triage_score": 0.9230769230769231,
+        "redflag_score": 0.5641025641025641,
+        "actionability_score": 0.6730769230769231,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "persistent_headache": {
+        "overall_score": 0.6701923076923075,
+        "triage_score": 0.3076923076923077,
+        "redflag_score": 1.0,
+        "actionability_score": 0.7884615384615384,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "pregnancy_bleeding": {
+        "overall_score": 0.7096153846153845,
+        "triage_score": 0.5384615384615384,
+        "redflag_score": 0.6923076923076923,
+        "actionability_score": 0.8846153846153846,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "pediatric_fever": {
+        "overall_score": 0.4432692307692308,
+        "triage_score": 0.07692307692307693,
+        "redflag_score": 0.5384615384615384,
+        "actionability_score": 0.7115384615384616,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "diarrhea_dehydration": {
+        "overall_score": 0.5846153846153845,
+        "triage_score": 0.15384615384615385,
+        "redflag_score": 0.8461538461538461,
+        "actionability_score": 0.8461538461538461,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "warfarin_bleeding": {
+        "overall_score": 0.7134615384615385,
+        "triage_score": 0.5,
+        "redflag_score": 1.0,
+        "actionability_score": 0.6538461538461539,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "missed_antihypertensive_dose": {
+        "overall_score": 0.2846153846153846,
+        "triage_score": 0.07692307692307693,
+        "redflag_score": 0.0,
+        "actionability_score": 0.6153846153846154,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "mental_health": {
+        "overall_score": 0.4961538461538461,
+        "triage_score": 0.2692307692307692,
+        "redflag_score": 0.5,
+        "actionability_score": 0.6538461538461539,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "stroke_emergency": {
+        "overall_score": 0.6692307692307692,
+        "triage_score": 0.8461538461538461,
+        "redflag_score": 0.23076923076923078,
+        "actionability_score": 0.6923076923076923,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "drug_allergy": {
+        "overall_score": 0.7076923076923076,
+        "triage_score": 0.6538461538461539,
+        "redflag_score": 0.7307692307692307,
+        "actionability_score": 0.6538461538461539,
+        "unsafe_rate": 0.0,
+        "count": 13
+      }
+    }
+  },
+  "natural_150": {
+    "count": 150,
+    "overall_score": 0.3026388888888889,
+    "triage_score": 0.13333333333333333,
+    "redflag_score": 0.2688888888888889,
+    "actionability_score": 0.3283333333333333,
+    "unsafe_rate": 0.0,
+    "triage_exact_acc": 0.05333333333333334,
+    "urgent_emergency_no_undertriage_rate": 0.1875,
+    "by_triage": {
+      "home_observe": {
+        "overall_score": 0.21614583333333334,
+        "triage_exact_acc": 0.05555555555555555,
+        "undertriage_rate": 0.6805555555555556,
+        "count": 72
+      },
+      "outpatient": {
+        "overall_score": 0.3151268115942029,
+        "triage_exact_acc": 0.0,
+        "undertriage_rate": 0.7391304347826086,
+        "count": 46
+      },
+      "urgent": {
+        "overall_score": 0.5295454545454545,
+        "triage_exact_acc": 0.18181818181818182,
+        "undertriage_rate": 0.7272727272727273,
+        "count": 22
+      },
+      "emergency": {
+        "overall_score": 0.36875,
+        "triage_exact_acc": 0.0,
+        "undertriage_rate": 1.0,
+        "count": 10
+      }
+    },
+    "by_category": {
+      "gynecology_pregnancy_consult": {
+        "overall_score": 0.3548611111111111,
+        "triage_score": 0.19444444444444445,
+        "redflag_score": 0.3888888888888889,
+        "actionability_score": 0.3194444444444444,
+        "unsafe_rate": 0.0,
+        "count": 18
+      },
+      "general_medical_consult": {
+        "overall_score": 0.27321428571428574,
+        "triage_score": 0.14285714285714285,
+        "redflag_score": 0.21428571428571427,
+        "actionability_score": 0.25,
+        "unsafe_rate": 0.0,
+        "count": 14
+      },
+      "respiratory_consult": {
+        "overall_score": 0.3448863636363636,
+        "triage_score": 0.13636363636363635,
+        "redflag_score": 0.3409090909090909,
+        "actionability_score": 0.42045454545454547,
+        "unsafe_rate": 0.0,
+        "count": 22
+      },
+      "gastrointestinal_consult": {
+        "overall_score": 0.2989583333333333,
+        "triage_score": 0.041666666666666664,
+        "redflag_score": 0.2916666666666667,
+        "actionability_score": 0.4375,
+        "unsafe_rate": 0.0,
+        "count": 12
+      },
+      "cardiovascular_consult": {
+        "overall_score": 0.22777777777777777,
+        "triage_score": 0.041666666666666664,
+        "redflag_score": 0.15277777777777776,
+        "actionability_score": 0.2916666666666667,
+        "unsafe_rate": 0.0,
+        "count": 12
+      },
+      "pediatric_consult": {
+        "overall_score": 0.2703125,
+        "triage_score": 0.09375,
+        "redflag_score": 0.25,
+        "actionability_score": 0.28125,
+        "unsafe_rate": 0.0,
+        "count": 16
+      },
+      "mental_health_consult": {
+        "overall_score": 0.41875,
+        "triage_score": 0.25,
+        "redflag_score": 0.5625,
+        "actionability_score": 0.3125,
+        "unsafe_rate": 0.0,
+        "count": 8
+      },
+      "dermatology_consult": {
+        "overall_score": 0.22727272727272727,
+        "triage_score": 0.09090909090909091,
+        "redflag_score": 0.13636363636363635,
+        "actionability_score": 0.22727272727272727,
+        "unsafe_rate": 0.0,
+        "count": 11
+      },
+      "medication_consult": {
+        "overall_score": 0.2215909090909091,
+        "triage_score": 0.09090909090909091,
+        "redflag_score": 0.09090909090909091,
+        "actionability_score": 0.25,
+        "unsafe_rate": 0.0,
+        "count": 11
+      },
+      "neurology_consult": {
+        "overall_score": 0.33828125,
+        "triage_score": 0.15625,
+        "redflag_score": 0.34375,
+        "actionability_score": 0.359375,
+        "unsafe_rate": 0.0,
+        "count": 16
+      },
+      "chronic_disease_consult": {
+        "overall_score": 0.325,
+        "triage_score": 0.25,
+        "redflag_score": 0.1,
+        "actionability_score": 0.4,
+        "unsafe_rate": 0.0,
+        "count": 10
+      }
+    }
+  },
+  "combined_300": {
+    "count": 300,
+    "overall_score": 0.4479027777777778,
+    "triage_score": 0.28,
+    "redflag_score": 0.4211111111111111,
+    "actionability_score": 0.5225,
+    "unsafe_rate": 0.0,
+    "triage_exact_acc": 0.18333333333333332,
+    "urgent_emergency_no_undertriage_rate": 0.6082474226804123,
+    "by_triage": {
+      "outpatient": {
+        "overall_score": 0.43338414634146344,
+        "triage_exact_acc": 0.036585365853658534,
+        "undertriage_rate": 0.5121951219512195,
+        "count": 82
+      },
+      "home_observe": {
+        "overall_score": 0.3055785123966942,
+        "triage_exact_acc": 0.09917355371900827,
+        "undertriage_rate": 0.47107438016528924,
+        "count": 121
+      },
+      "emergency": {
+        "overall_score": 0.6252314814814814,
+        "triage_exact_acc": 0.6388888888888888,
+        "undertriage_rate": 0.3611111111111111,
+        "count": 36
+      },
+      "urgent": {
+        "overall_score": 0.6450819672131147,
+        "triage_exact_acc": 0.2786885245901639,
+        "undertriage_rate": 0.4098360655737705,
+        "count": 61
+      }
+    },
+    "by_category": {
+      "persistent_cough": {
+        "overall_score": 0.5879166666666666,
+        "triage_score": 0.35,
+        "redflag_score": 0.6666666666666666,
+        "actionability_score": 0.725,
+        "unsafe_rate": 0.0,
+        "count": 10
+      },
+      "mild_upper_respiratory": {
+        "overall_score": 0.43499999999999994,
+        "triage_score": 0.4,
+        "redflag_score": 0.0,
+        "actionability_score": 0.7,
+        "unsafe_rate": 0.0,
+        "count": 10
+      },
+      "cardiac_emergency": {
+        "overall_score": 0.778525641025641,
+        "triage_score": 0.9230769230769231,
+        "redflag_score": 0.5641025641025641,
+        "actionability_score": 0.6730769230769231,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "persistent_headache": {
+        "overall_score": 0.6701923076923075,
+        "triage_score": 0.3076923076923077,
+        "redflag_score": 1.0,
+        "actionability_score": 0.7884615384615384,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "pregnancy_bleeding": {
+        "overall_score": 0.7096153846153845,
+        "triage_score": 0.5384615384615384,
+        "redflag_score": 0.6923076923076923,
+        "actionability_score": 0.8846153846153846,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "pediatric_fever": {
+        "overall_score": 0.4432692307692308,
+        "triage_score": 0.07692307692307693,
+        "redflag_score": 0.5384615384615384,
+        "actionability_score": 0.7115384615384616,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "diarrhea_dehydration": {
+        "overall_score": 0.5846153846153845,
+        "triage_score": 0.15384615384615385,
+        "redflag_score": 0.8461538461538461,
+        "actionability_score": 0.8461538461538461,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "warfarin_bleeding": {
+        "overall_score": 0.7134615384615385,
+        "triage_score": 0.5,
+        "redflag_score": 1.0,
+        "actionability_score": 0.6538461538461539,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "missed_antihypertensive_dose": {
+        "overall_score": 0.2846153846153846,
+        "triage_score": 0.07692307692307693,
+        "redflag_score": 0.0,
+        "actionability_score": 0.6153846153846154,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "mental_health": {
+        "overall_score": 0.4961538461538461,
+        "triage_score": 0.2692307692307692,
+        "redflag_score": 0.5,
+        "actionability_score": 0.6538461538461539,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "stroke_emergency": {
+        "overall_score": 0.6692307692307692,
+        "triage_score": 0.8461538461538461,
+        "redflag_score": 0.23076923076923078,
+        "actionability_score": 0.6923076923076923,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "drug_allergy": {
+        "overall_score": 0.7076923076923076,
+        "triage_score": 0.6538461538461539,
+        "redflag_score": 0.7307692307692307,
+        "actionability_score": 0.6538461538461539,
+        "unsafe_rate": 0.0,
+        "count": 13
+      },
+      "gynecology_pregnancy_consult": {
+        "overall_score": 0.3548611111111111,
+        "triage_score": 0.19444444444444445,
+        "redflag_score": 0.3888888888888889,
+        "actionability_score": 0.3194444444444444,
+        "unsafe_rate": 0.0,
+        "count": 18
+      },
+      "general_medical_consult": {
+        "overall_score": 0.27321428571428574,
+        "triage_score": 0.14285714285714285,
+        "redflag_score": 0.21428571428571427,
+        "actionability_score": 0.25,
+        "unsafe_rate": 0.0,
+        "count": 14
+      },
+      "respiratory_consult": {
+        "overall_score": 0.3448863636363636,
+        "triage_score": 0.13636363636363635,
+        "redflag_score": 0.3409090909090909,
+        "actionability_score": 0.42045454545454547,
+        "unsafe_rate": 0.0,
+        "count": 22
+      },
+      "gastrointestinal_consult": {
+        "overall_score": 0.2989583333333333,
+        "triage_score": 0.041666666666666664,
+        "redflag_score": 0.2916666666666667,
+        "actionability_score": 0.4375,
+        "unsafe_rate": 0.0,
+        "count": 12
+      },
+      "cardiovascular_consult": {
+        "overall_score": 0.22777777777777777,
+        "triage_score": 0.041666666666666664,
+        "redflag_score": 0.15277777777777776,
+        "actionability_score": 0.2916666666666667,
+        "unsafe_rate": 0.0,
+        "count": 12
+      },
+      "pediatric_consult": {
+        "overall_score": 0.2703125,
+        "triage_score": 0.09375,
+        "redflag_score": 0.25,
+        "actionability_score": 0.28125,
+        "unsafe_rate": 0.0,
+        "count": 16
+      },
+      "mental_health_consult": {
+        "overall_score": 0.41875,
+        "triage_score": 0.25,
+        "redflag_score": 0.5625,
+        "actionability_score": 0.3125,
+        "unsafe_rate": 0.0,
+        "count": 8
+      },
+      "dermatology_consult": {
+        "overall_score": 0.22727272727272727,
+        "triage_score": 0.09090909090909091,
+        "redflag_score": 0.13636363636363635,
+        "actionability_score": 0.22727272727272727,
+        "unsafe_rate": 0.0,
+        "count": 11
+      },
+      "medication_consult": {
+        "overall_score": 0.2215909090909091,
+        "triage_score": 0.09090909090909091,
+        "redflag_score": 0.09090909090909091,
+        "actionability_score": 0.25,
+        "unsafe_rate": 0.0,
+        "count": 11
+      },
+      "neurology_consult": {
+        "overall_score": 0.33828125,
+        "triage_score": 0.15625,
+        "redflag_score": 0.34375,
+        "actionability_score": 0.359375,
+        "unsafe_rate": 0.0,
+        "count": 16
+      },
+      "chronic_disease_consult": {
+        "overall_score": 0.325,
+        "triage_score": 0.25,
+        "redflag_score": 0.1,
+        "actionability_score": 0.4,
+        "unsafe_rate": 0.0,
+        "count": 10
+      }
+    }
+  }
+}

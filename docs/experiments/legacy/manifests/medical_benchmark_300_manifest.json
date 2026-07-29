@@ -1,0 +1,89 @@
+{
+  "seed": 42,
+  "specialized_150": {
+    "file": "/root/MedicalGPT/eval/medical_benchmark_specialized_150.jsonl",
+    "count": 150,
+    "category_distribution": {
+      "cardiac_emergency": 13,
+      "diarrhea_dehydration": 13,
+      "drug_allergy": 13,
+      "mental_health": 13,
+      "mild_upper_respiratory": 10,
+      "missed_antihypertensive_dose": 13,
+      "pediatric_fever": 13,
+      "persistent_cough": 10,
+      "persistent_headache": 13,
+      "pregnancy_bleeding": 13,
+      "stroke_emergency": 13,
+      "warfarin_bleeding": 13
+    },
+    "triage_distribution": {
+      "emergency": 26,
+      "home_observe": 49,
+      "outpatient": 36,
+      "urgent": 39
+    }
+  },
+  "natural_150": {
+    "file": "/root/MedicalGPT/eval/medical_benchmark_natural_150.jsonl",
+    "count": 150,
+    "category_distribution": {
+      "cardiovascular_consult": 12,
+      "chronic_disease_consult": 10,
+      "dermatology_consult": 11,
+      "gastrointestinal_consult": 12,
+      "general_medical_consult": 14,
+      "gynecology_pregnancy_consult": 18,
+      "medication_consult": 11,
+      "mental_health_consult": 8,
+      "neurology_consult": 16,
+      "pediatric_consult": 16,
+      "respiratory_consult": 22
+    },
+    "triage_distribution": {
+      "emergency": 10,
+      "home_observe": 72,
+      "outpatient": 46,
+      "urgent": 22
+    },
+    "source_distribution": {
+      "huatuogpt_sft_220k.jsonl": 41,
+      "shibing624_medical_sft.jsonl": 109
+    }
+  },
+  "benchmark_300": {
+    "file": "/root/MedicalGPT/eval/medical_benchmark_300.jsonl",
+    "count": 300,
+    "category_distribution": {
+      "cardiac_emergency": 13,
+      "cardiovascular_consult": 12,
+      "chronic_disease_consult": 10,
+      "dermatology_consult": 11,
+      "diarrhea_dehydration": 13,
+      "drug_allergy": 13,
+      "gastrointestinal_consult": 12,
+      "general_medical_consult": 14,
+      "gynecology_pregnancy_consult": 18,
+      "medication_consult": 11,
+      "mental_health": 13,
+      "mental_health_consult": 8,
+      "mild_upper_respiratory": 10,
+      "missed_antihypertensive_dose": 13,
+      "neurology_consult": 16,
+      "pediatric_consult": 16,
+      "pediatric_fever": 13,
+      "persistent_cough": 10,
+      "persistent_headache": 13,
+      "pregnancy_bleeding": 13,
+      "respiratory_consult": 22,
+      "stroke_emergency": 13,
+      "warfarin_bleeding": 13
+    },
+    "triage_distribution": {
+      "emergency": 36,
+      "home_observe": 121,
+      "outpatient": 82,
+      "urgent": 61
+    }
+  }
+}

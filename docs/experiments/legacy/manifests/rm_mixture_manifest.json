@@ -1,0 +1,37 @@
+{
+  "seed": 42,
+  "ratio": {
+    "rm_static_zhTW_rm": 6,
+    "dpo_en_zh_20k_preference_zh_rm": 3,
+    "zhihu_rlhf_3k_rm": 1
+  },
+  "train_file_dir": "/root/MedicalGPT/data/reward_mix/rm_631_zh_medical/train",
+  "validation_file_dir": "/root/MedicalGPT/data/reward_mix/rm_631_zh_medical/val",
+  "sources": {
+    "rm_static_zhTW_rm": {
+      "available": 66676,
+      "ratio": 6,
+      "sampled": 19998,
+      "train_written": 19798,
+      "val_written": 200,
+      "path": "/root/MedicalGPT/data/reward_selected/rm_static_zhTW_rm.jsonl"
+    },
+    "dpo_en_zh_20k_preference_zh_rm": {
+      "available": 9999,
+      "ratio": 3,
+      "sampled": 9999,
+      "train_written": 9899,
+      "val_written": 100,
+      "path": "/root/MedicalGPT/data/reward_selected/dpo_en_zh_20k_preference_zh_rm.jsonl"
+    },
+    "zhihu_rlhf_3k_rm": {
+      "available": 3458,
+      "ratio": 1,
+      "sampled": 3333,
+      "train_written": 3300,
+      "val_written": 33,
+      "path": "/root/MedicalGPT/data/reward_selected/zhihu_rlhf_3k_rm.jsonl"
+    }
+  },
+  "recommended_rm_command": "python reward_modeling.py --train_file_dir /root/MedicalGPT/data/reward_mix/rm_631_zh_medical/train --validation_file_dir /root/MedicalGPT/data/reward_mix/rm_631_zh_medical/val"
+}

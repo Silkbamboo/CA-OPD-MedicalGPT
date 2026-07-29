@@ -1,0 +1,190 @@
+MedicalGPT Current Fine-Tuning Stack Map
+Date: 2026-03-30
+
+1. Executive Conclusion
+
+The current MedicalGPT training framework is a custom training pipeline built on top of the Hugging Face ecosystem.
+It does NOT currently use ms-swift, LLaMA-Factory, or Unsloth as the main fine-tuning framework.
+
+Current main stack:
+- transformers
+- trl
+- peft
+- bitsandbytes
+- datasets
+
+Main conclusion by stage:
+- SFT: custom script + transformers.Trainer + PEFT/QLoRA
+- DPO: custom script + TRL DPOTrainer
+- GRPO: custom script + TRL GRPOTrainer + custom medical reward functions
+- Merge: custom merge utility based on PeftModel.merge_and_unload()
+- Eval: custom inference + custom benchmark comparison scripts
+
+2. Overall Module Relationship
+
+[Base Model]
+Qwen2.5-1.5B-Instruct
+    |
+    v
+[SFT]
+run_sft_*.sh
+    -> supervised_finetuning.py
+    -> SavePeftModelTrainer(Trainer)
+    -> outputs SFT LoRA adapters / checkpoints
+    |
+    +--> [Direct evaluation]
+    |        inference.py + benchmark scripts
+    |
+    +--> [Merge]
+             run_merge_sft_for_dpo_*.sh
+             -> merge_peft_adapter.py
+             -> merged full model for downstream training
+                    |
+                    +--> [DPO]
+                    |       run_dpo_*.sh
+                    |       -> dpo_training.py
+                    |       -> TRL DPOTrainer
+                    |       -> outputs DPO LoRA adapter
+                    |              |
+                    |              +--> [Merge]
+                    |                       merge_peft_adapter.py
+                    |                       -> merged DPO full model
+                    |                              |
+                    |                              +--> [GRPO]
+                    |                                      medical_grpo_training.py
+                    |                                      -> TRL GRPOTrainer
+                    |                                      -> custom medical rewards
+                    |
+                    +--> [Direct GRPO route]
+                            medical_grpo_training.py
+                            -> TRL GRPOTrainer
+                            -> custom medical rewards
+
+3. SFT Stage
+
+Primary launcher:
+- /root/MedicalGPT/run_sft_medical_85_15_qwen2_5_1_5b_3090_24g.sh
+
+Core entrypoint:
+- /root/MedicalGPT/supervised_finetuning.py
+
+Key implementation facts:
+- Uses transformers AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, Trainer
+- Defines custom SavePeftModelTrainer by inheriting from transformers.Trainer
+- Uses PEFT APIs:
+  - get_peft_model
+  - prepare_model_for_kbit_training
+- Uses QLoRA setup:
+  - --use_peft True
+  - --qlora True
+  - --load_in_4bit True
+- Uses bitsandbytes 4-bit quantization
+
+Runtime character:
+- Mainline SFT is a custom HF Trainer pipeline, not ms-swift / LLaMA-Factory / Unsloth
+- Multi-GPU execution uses torchrun/DDP in the dual-GPU resume scripts
+
+4. Merge Stage
+
+Primary launcher:
+- /root/MedicalGPT/run_merge_sft_for_dpo_qwen2_5_1_5b_3090_24g.sh
+
+Core utility:
+- /root/MedicalGPT/merge_peft_adapter.py
+
+What it does:
+- Loads base model with transformers
+- Loads LoRA adapter with PEFT
+- Calls PeftModel.from_pretrained(...)
+- Calls merge_and_unload()
+- Saves a merged full model directory
+
+Purpose:
+- Produce a standalone merged base for downstream DPO or GRPO
+- Avoid requiring base_model + lora_model pair in later stages if a merged base is preferred
+
+5. DPO Stage
+
+Primary launcher:
+- /root/MedicalGPT/run_dpo_zh_medical_qwen2_5_1_5b_3090_24g.sh
+
+Core entrypoint:
+- /root/MedicalGPT/dpo_training.py
+
+Key implementation facts:
+- Imports DPOTrainer and DPOConfig from trl
+- Uses transformers + datasets + peft
+- Can run with PEFT/QLoRA
+- Current medical DPO route starts from a merged SFT model directory
+
+Framework classification:
+- Not a LLaMA-Factory pipeline
+- Not an ms-swift pipeline
+- It is a custom DPO script built directly on TRL
+
+6. GRPO Stage
+
+Primary launchers:
+- /root/MedicalGPT/run_medical_grpo_from_sft_full_qwen2_5_1_5b_3090_24g_batch8_300step.sh
+- /root/MedicalGPT/run_medical_grpo_from_dpo_full_qwen2_5_1_5b_3090_24g_batch8_300step.sh
+
+Core entrypoint:
+- /root/MedicalGPT/medical_grpo_training.py
+
+Key implementation facts:
+- Imports GRPOTrainer, GRPOConfig, ModelConfig, TrlParser from trl
+- Uses AutoModelForCausalLM + BitsAndBytesConfig + PEFT LoRA
+- Builds custom medical reward functions inside the script
+- Reward components include:
+  - triage
+  - redflag
+  - actionability
+  - safety_penalty
+  - mention_bonus (for reward v1/full reward)
+
+Framework classification:
+- This is not a stock third-party medical GRPO framework
+- It is a custom TRL GRPO training entrypoint specialized for medical triage and safety alignment
+
+7. Evaluation Stage
+
+Relevant scripts:
+- /root/MedicalGPT/inference.py
+- /root/MedicalGPT/run_compare_sft_grpo_vs_dpo_grpo.sh
+- /root/MedicalGPT/eval/compare_grpo_routes.py
+
+What the eval stack does:
+- Runs inference using base_model + lora_model or merged bases
+- Produces prediction jsonl files
+- Compares outputs on benchmark300 and safety150
+- Summarizes route-level differences such as:
+  - overall_score
+  - triage-related metrics
+  - safety-related metrics
+
+8. Libraries Actually Evident In This Repository
+
+From requirements and training code, the active stack is:
+- accelerate
+- datasets
+- peft
+- transformers
+- trl
+- bitsandbytes (used by code, commented in requirements due packaging note)
+
+9. Frameworks Not Found As Mainline Dependencies
+
+A targeted scan over code/scripts/docs did not find active references to:
+- ms-swift
+- LLaMA-Factory / llamafactory
+- Unsloth
+
+So the current framework should be described as:
+"MedicalGPT custom training pipeline built directly on Hugging Face Transformers + TRL + PEFT/QLoRA"
+
+10. Practical Summary
+
+If someone asks "What is the current fine-tuning framework?", the accurate answer is:
+
+This repo is not primarily using ms-swift, LLaMA-Factory, or Unsloth.
+It uses custom Python training entrypoints for SFT, DPO, and GRPO, built directly on Hugging Face Transformers, TRL, PEFT/LoRA/QLoRA, bitsandbytes, and datasets.

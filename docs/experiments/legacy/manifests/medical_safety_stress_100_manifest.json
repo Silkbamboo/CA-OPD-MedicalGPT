@@ -1,0 +1,23 @@
+{
+  "count": 100,
+  "category_distribution": {
+    "allergy_safety": 10,
+    "antibiotic_safety": 10,
+    "cardiac_delay": 10,
+    "dehydration_safety": 10,
+    "mental_health_safety": 10,
+    "missed_dose_safety": 10,
+    "pediatric_med_safety": 10,
+    "pregnancy_safety": 10,
+    "stroke_delay": 10,
+    "warfarin_safety": 10
+  },
+  "triage_distribution": {
+    "emergency": 20,
+    "home_observe": 40,
+    "outpatient": 10,
+    "urgent": 30
+  },
+  "purpose": "Stress-test unsafe advice, delayed escalation, medication-safety failures, and high-risk under-triage for GRPO reward evaluation.",
+  "notes": "Expanded from the 40-item smoke set into a 100-item formal safety stress set. This is still a synthetic stress set, not real clinical distribution."
+}

@@ -1,0 +1,73 @@
+{
+  "seed": 42,
+  "medical_ratio": 0.85,
+  "general_ratio": 0.15,
+  "general_keep": "all",
+  "medical_available": 2292631,
+  "general_available": 145555,
+  "medical_target_before_split": 824812,
+  "general_target_before_split": 145555,
+  "train_counts_after_split": {
+    "medical": 816564,
+    "general": 144099
+  },
+  "val_counts_after_split": {
+    "medical": 8248,
+    "general": 1456
+  },
+  "medical_sources": [
+    {
+      "name": "shibing624_medical_sft",
+      "path": "/root/MedicalGPT/data/finetune/shibing624_medical_sft.jsonl",
+      "available": 2066589,
+      "sampled": 743489,
+      "train_written": 736054,
+      "val_written": 7435
+    },
+    {
+      "name": "huatuogpt_sft_220k",
+      "path": "/root/MedicalGPT/data/finetune/huatuogpt_sft_220k.jsonl",
+      "available": 226042,
+      "sampled": 81323,
+      "train_written": 80510,
+      "val_written": 813
+    }
+  ],
+  "general_sources": [
+    {
+      "name": "general_sharegpt_gpt4",
+      "path": "/root/MedicalGPT/data/finetune/general_sharegpt_gpt4.jsonl",
+      "available": 6206,
+      "sampled": 6206,
+      "train_written": 6144,
+      "val_written": 62
+    },
+    {
+      "name": "general_alpaca_zh",
+      "path": "/root/MedicalGPT/data/finetune/general_alpaca_zh.jsonl",
+      "available": 48818,
+      "sampled": 48818,
+      "train_written": 48330,
+      "val_written": 488
+    },
+    {
+      "name": "general_sharegpt_cn_38k",
+      "path": "/root/MedicalGPT/data/finetune/general_sharegpt_cn_38k.jsonl",
+      "available": 38557,
+      "sampled": 38557,
+      "train_written": 38171,
+      "val_written": 386
+    },
+    {
+      "name": "general_stanford_alpaca_50k",
+      "path": "/root/MedicalGPT/data/finetune/general_stanford_alpaca_50k.jsonl",
+      "available": 51974,
+      "sampled": 51974,
+      "train_written": 51454,
+      "val_written": 520
+    }
+  ],
+  "train_file_dir": "/root/MedicalGPT/data/finetune_mix/medical_dominant_85_15/train",
+  "validation_file_dir": "/root/MedicalGPT/data/finetune_mix/medical_dominant_85_15/val",
+  "recommended_sft_command": "python supervised_finetuning.py --train_file_dir /root/MedicalGPT/data/finetune_mix/medical_dominant_85_15/train --validation_file_dir /root/MedicalGPT/data/finetune_mix/medical_dominant_85_15/val"
+}

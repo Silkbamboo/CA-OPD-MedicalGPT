@@ -1,0 +1,14 @@
+{
+  "source": "/root/MedicalGPT/data/reward_raw/dpo_zh.jsonl",
+  "seed": 42,
+  "val_ratio": 0.01,
+  "counts": {
+    "total": 9999,
+    "train": 9899,
+    "val": 100
+  },
+  "files": {
+    "train": "/root/MedicalGPT/data/dpo_mix/zh_for_medical_general/train/dpo_en_zh_20k_preference_zh.jsonl",
+    "val": "/root/MedicalGPT/data/dpo_mix/zh_for_medical_general/val/dpo_en_zh_20k_preference_zh.jsonl"
+  }
+}
