@@ -1,0 +1,39 @@
+# Fixture data config: builds all five splits from tiny local jsonl files.
+#
+# Purpose: prove split construction, deduplication, label stripping and manifest
+# reproducibility with zero network access and zero disk budget. The real
+# configuration (configs/data/base.yaml) points at the public datasets and is
+# otherwise identical in structure.
+
+version: fixture-v1
+seed: 42
+output_dir: outputs/data/fixture-v1
+strict: true
+
+sources:
+  medical_reasoning:
+    - name: medical_o1_zh_fixture
+      converter: medical_o1_zh
+      kind: jsonl
+      path: tests/fixtures/raw_medical_o1_zh.jsonl
+  medical_mcq:
+    - name: medqa_zh_fixture
+      converter: medqa_zh
+      kind: jsonl
+      path: tests/fixtures/raw_medqa_zh.jsonl
+  general_mcq:
+    - name: ceval_fixture
+      converter: ceval
+      kind: jsonl
+      path: tests/fixtures/raw_ceval.jsonl
+
+# Filled in protection order: final_test first, then controller_dev, then the
+# training pools. Counts are small so the whole build runs in milliseconds.
+allocation:
+  final_test_medical: 8
+  final_test_general: 8
+  controller_dev_medical: 6
+  controller_dev_general: 6
+  medical_sft: 20
+  medical_opd_prompts: 10
+  general_anchors: 10

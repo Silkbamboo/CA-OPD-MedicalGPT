@@ -1,0 +1,18 @@
+# Controller-dev evaluation.
+#
+# This is the ONLY evaluation allowed to influence training: teacher routing,
+# early stopping and checkpoint selection all read this split and nothing else.
+#
+# Decode settings are fixed and recorded with every result. Changing any of them
+# invalidates comparability with previously recorded runs, so a change requires
+# an ADR (docs/decisions/).
+
+split: controller_dev
+data_dir: /root/autodl-tmp/ca-opd/data/v1
+max_samples: null        # use the whole controller dev split
+batch_size: 16
+
+decode:
+  temperature: 0.0       # greedy only; sampling is rejected by DecodeSettings
+  max_new_tokens: 16     # a letter answer needs very few tokens
+  system_prompt: "你是一名严谨的中文医疗助手。回答需明确不确定性，并在必要时建议就医。"

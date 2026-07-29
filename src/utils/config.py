@@ -83,6 +83,14 @@ def validate(config: Mapping[str, Any], schema: Schema, path: str = "") -> Dict[
             continue
 
         value = config[key]
+        # An explicit YAML null on an optional field means "use the default".
+        # This lets a config document a knob (e.g. `max_samples: null`) instead of
+        # omitting it, which is clearer for reviewers.
+        if value is None and not spec.required:
+            out[key] = spec.default
+            continue
+        if value is None:
+            raise ConfigError(f"{full} is required but was set to null")
         # bool is a subclass of int; reject the accidental "true" for an int field
         if bool in spec.types and isinstance(value, bool):
             pass

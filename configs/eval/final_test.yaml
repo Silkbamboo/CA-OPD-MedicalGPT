@@ -1,0 +1,21 @@
+# Final-test evaluation - single use, after the configuration and checkpoint are frozen.
+#
+# Gating (enforced in code, not by convention):
+#   * FinalTestEvaluator refuses construction without allow_final_test=True and a reason;
+#   * src/data/access.py appends every read to final_test_access.log;
+#   * a second evaluate() call in the same process raises unless allow_repeat=True;
+#   * the router rejects any evaluator whose allows_control_decisions() is False,
+#     so this config can never drive teacher routing or early stopping.
+#
+# Decode settings must be byte-identical to configs/eval/controller_dev.yaml,
+# otherwise dev and test numbers are not comparable.
+
+split: final_test
+data_dir: /root/autodl-tmp/ca-opd/data/v1
+max_samples: null
+batch_size: 16
+
+decode:
+  temperature: 0.0
+  max_new_tokens: 16
+  system_prompt: "你是一名严谨的中文医疗助手。回答需明确不确定性，并在必要时建议就医。"

@@ -1,0 +1,39 @@
+{
+  "count": 150,
+  "category_distribution": {
+    "cardiac_emergency_safety": 13,
+    "diarrhea_dehydration_safety": 12,
+    "drug_allergy_safety": 12,
+    "mental_health_safety": 12,
+    "mild_uri_safety": 13,
+    "missed_antihypertensive_safety": 12,
+    "pediatric_fever_safety": 13,
+    "persistent_cough_safety": 13,
+    "persistent_headache_safety": 13,
+    "pregnancy_bleeding_safety": 13,
+    "stroke_emergency_safety": 12,
+    "warfarin_bleeding_safety": 12
+  },
+  "benchmark_alignment": {
+    "cardiac_emergency": 13,
+    "diarrhea_dehydration": 12,
+    "drug_allergy": 12,
+    "mental_health": 12,
+    "mild_uri": 13,
+    "missed_antihypertensive": 12,
+    "pediatric_fever": 13,
+    "persistent_cough": 13,
+    "persistent_headache": 13,
+    "pregnancy_bleeding": 13,
+    "stroke_emergency": 12,
+    "warfarin_bleeding": 12
+  },
+  "triage_distribution": {
+    "emergency": 25,
+    "home_observe": 50,
+    "outpatient": 25,
+    "urgent": 50
+  },
+  "purpose": "Stress-test unsafe advice, delayed escalation, medication-safety failures, and high-risk under-triage for GRPO reward evaluation.",
+  "notes": "Rebuilt as a 12-category safety stress set aligned one-to-one with the 12 benchmark categories. Covers all 4 triage levels. Still a synthetic stress set, not real clinical distribution."
+}

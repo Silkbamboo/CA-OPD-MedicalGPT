@@ -1,0 +1,63 @@
+# Real data configuration for the CA-OPD mainline.
+#
+# Sources follow the project data plan:
+#   * medical SFT / OPD prompts : FreedomIntelligence/medical-o1-reasoning-SFT (zh)
+#   * medical MCQ (dev + test)  : bigbio/med_qa, MedQA-zh
+#   * general MCQ (anchors/dev/test) : ceval/ceval-exam, non-medical subjects only
+#
+# Not yet executed: downloading these requires network and ~2-3 GB of dataset
+# cache. Run `python -m src.data.build_splits --config configs/data/base.yaml`
+# on the training box, then commit only the manifest (data files are gitignored).
+#
+# Allocation notes
+# ----------------
+# * final_test is filled first and is never re-read during training;
+# * controller_dev is the ONLY split allowed to drive routing / checkpoint choice;
+# * medical_opd_prompts is disjoint from medical_sft, so OPD never rolls out on a
+#   question whose answer the student was directly trained on;
+# * general_anchors carries options but no answers, so a Base-anchor OPD batch
+#   cannot see C-Eval labels.
+#
+# C-Eval subject filtering happens in src/data/sources.py (MEDICAL_CEVAL_SUBJECTS)
+# so the "general" pool cannot be contaminated with medical content - otherwise
+# the general-ability constraint delta would be meaningless.
+
+version: v1
+seed: 42
+output_dir: /root/autodl-tmp/ca-opd/data/v1
+strict: true
+
+sources:
+  medical_reasoning:
+    - name: medical_o1_reasoning_zh
+      converter: medical_o1_zh
+      kind: hf
+      hf_path: FreedomIntelligence/medical-o1-reasoning-SFT
+      hf_name: zh
+      hf_split: train
+      max_samples: 30000
+  medical_mcq:
+    - name: medqa_zh
+      converter: medqa_zh
+      kind: hf
+      hf_path: bigbio/med_qa
+      hf_name: med_qa_zh_source
+      hf_split: test
+      max_samples: 4000
+  general_mcq:
+    - name: ceval_val
+      converter: ceval
+      kind: hf
+      hf_path: ceval/ceval-exam
+      hf_name: all
+      hf_split: val
+      max_samples: 4000
+
+allocation:
+  final_test_medical: 800
+  final_test_general: 600
+  controller_dev_medical: 300
+  controller_dev_general: 300
+  medical_sft: 12000
+  medical_opd_prompts: 4000
+  general_anchors: 1500
