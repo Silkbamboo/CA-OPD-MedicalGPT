@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.private/
+private/
+docs/private/
+docs/interview/
+*.pem
+*.key
+credentials*.json
+secrets*.yaml
+secrets*.yml
+
+# Models and training state
+models/
+model_cache/
+huggingface/
+.huggingface/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.gguf
+checkpoints/
+
+# Data payloads. Only synthetic fixtures and explicitly reviewed manifests are tracked.
+data/raw/
+data/interim/
+data/processed/
+data/**/*.jsonl
+data/**/*.parquet
+data/**/*.arrow
+data/**/*.csv
+
+# Runtime artifacts
+outputs/
+logs/
+runs/
+predictions/
+rollouts/
+wandb/
+.wandb/
+swanlab*/
+swanlog/
+ray/
+tmp/
+cache/
+.cache/
+
+# Editors / operating systems
+.DS_Store
+.idea/
+.vscode/

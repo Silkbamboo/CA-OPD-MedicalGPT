@@ -1,359 +1,336 @@
 <div align="center">
 
-# CA-OPD
+# CA-OPD-MedicalGPT
 
-### Constraint-Aware Multi-Teacher On-Policy Distillation
+### Qwen3-4B 医疗能力迁移与通用能力保持的受控实验
 
-面向中文医疗能力增强与通用能力保持的约束感知双教师 On-Policy Distillation
-
-[![Status](https://img.shields.io/badge/status-research%20in%20progress-F59E0B)](#项目状态与结果)
-[![Models](https://img.shields.io/badge/models-Qwen3--1.7B%20%7C%204B-7C3AED)](#模型与算力)
-[![Target Stack](https://img.shields.io/badge/target%20stack-veRL%20%7C%20vLLM%20%7C%20Ray-2563EB)](#双-rtx-4090-系统设计)
-[![Method](https://img.shields.io/badge/method-CA--OPD%20%7C%20LoRA%20%7C%20PPO-059669)](#方法ca-opd)
-[![Hardware](https://img.shields.io/badge/hardware-2%C3%97RTX%204090-374151)](#双-rtx-4090-系统设计)
+[![Status](https://img.shields.io/badge/status-experiment%20complete-2563EB)](#实验结论)
+[![Finding](https://img.shields.io/badge/finding-hypothesis%20not%20supported-F59E0B)](#实验结论)
+[![Model](https://img.shields.io/badge/model-Qwen3--4B-7C3AED)](#模型与方法)
+[![Hardware](https://img.shields.io/badge/hardware-2%C3%97RTX%203090-374151)](#系统实现)
+[![Public tests](https://img.shields.io/badge/public%20tests-313%20passed-059669)](#复现)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-在双 RTX 4090 的资源约束下，研究医疗领域增强与通用能力遗忘之间的冲突；根据实时能力缺口动态路由 Medical/Base Teacher，并以领域级 KL 安全缩放稳定在线策略更新。
+在 `2 × RTX 3090 24GB` 上实现医疗 SFT、单教师 Medical OPD、固定双教师 IDT 与约束感知 CA-OPD，
+并用预注册、prediction-first 的独立确认实验检验医疗能力迁移是否可复现。
 
-**中文文档** · English version will be synchronized after the Qwen3/OPD pipeline is stable.
+**Research only · Not for clinical use**
 
 </div>
 
-> **🚧 当前处于研究设计与迁移阶段。** 当前方案已在 [PROJECT_PLAN.md](PROJECT_PLAN.md) 中确定；Qwen3/veRL 实现、受控基线与正式实验尚未完成，因此本文不展示未经运行验证的结果数字。
+> 本项目保留并公开负向结果：SFT-v3 的医疗增益获得独立确认；Medical OPD 在开发集最佳
+> checkpoint 上出现 `+1.33pp` 点估计，但没有在独立 600 题确认中复现；固定 IDT 与
+> CA-OPD 的等预算实验也没有支持 CA 优于 IDT。项目没有继续针对确认集调参，也没有访问
+> final test。
 
-## 项目简介
+## TL;DR
 
-- **研究问题**：医疗 SFT 能增强领域能力，却可能造成通用能力遗忘；固定双 Teacher 比例又无法适应 Student 能力随训练变化的过程。
-- **方法设计**：CA-OPD 依据 controller dev 上的医疗/通用能力缺口，动态选择 Medical Teacher 或 Base Teacher，并用 EMA、迟滞和概率边界抑制路由抖动。
-- **稳定机制**：分领域跟踪 Student–Teacher KL，以安全缩放和 advantage clip 抑制极端更新与策略熵塌缩。
-- **系统目标**：GPU 0 承担 Student 训练与 rollout，GPU 1 通过共享 Base Backbone 和冻结 Medical LoRA 提供双 Teacher scoring；目标栈为 veRL、vLLM、Ray 与 LoRA。
-- **实验纪律**：controller dev 驱动调度和 checkpoint 选择；final test 只在配置与 checkpoint 固定后执行，不进入训练闭环。
+- **做了什么**：围绕 Qwen3-4B 构建 Medical SFT → Medical OPD → IDT → CA-OPD 的训练与评测闭环。
+- **得到什么**：SFT-v3 在冻结的 600 题确认集上相对 Base 提升 `4.00pp`；B2 step240 的开发集趋势在另一轮独立 B2 确认中变为 `0.00pp`。
+- **项目价值**：实现双 3090 下的三策略训练、原子 checkpoint、完整恢复、候选更新事务回滚、标签隔离评测和配对统计，而不是只报告最好的开发集数字。
 
-```text
-发现问题 → 建立同栈 baseline → 设计 CA-OPD → 实现双 4090 训练系统
-        → 消融与多 seed 验证 → 分析能力 Pareto、稳定性与系统效率
-```
+| 冻结事实 | 值 |
+|---|---|
+| Base | `Qwen/Qwen3-4B` |
+| Model revision | `1cfa9a7208912126459214e8b04321603b3df60c` |
+| Hardware | `2 × RTX 3090 24GB` |
+| Main seed | `42` |
+| OPD group size / response limit | `1 / 1024 tokens` |
+| Formal trainer | custom `Transformers + PEFT` three-policy loop |
+| Final-test access | `0` |
 
-## 研究问题
+## 实验结论
 
-### 医疗增强是一个带约束的多目标问题
+| 研究假设 | 关键证据 | 判定 |
+|---|---|---|
+| Medical SFT 能提升医疗能力 | 600 题：`443 → 467`，`+4.00pp`，95% CI `[+1.17,+7.00]pp`，McNemar `p=0.0116` | 支持 |
+| 本项目中的 SFT 会损害通用能力 | Controller：`61.244% → 66.507%` | 未观察到 |
+| 单教师 Medical OPD 能稳定迁移医疗能力 | 开发集最佳点 `+1.33pp`；600 题 B2 确认 `0.00pp` | 不支持 |
+| CA-OPD 优于固定 IDT | step120 Medical：`72.00% vs 72.33%` | 不支持 |
+| CA 在通用约束下更稳定 | 当前单 seed、120 步证据未形成优势 | 不支持 |
 
-如果只追求医疗 benchmark，领域 SFT 可能在提高医疗准确率的同时损伤原始模型的通用能力。本项目将任务写成：
+这里的“不支持”不等于证明所有 OPD 或 CA 方法无效。它只表示：在本仓库冻结的模型、数据、
+`group_size=1`、训练预算和评测协议下，没有观察到可复现的正向结果。
 
-$$
-\max_\theta M_{\mathrm{medical}}(\theta)
-$$
+## 模型与方法
 
-$$
-\text{s.t.}\quad M_{\mathrm{general}}(\theta)\ge M_{\mathrm{general}}(\theta_0)-\delta
-$$
+| ID | 路线 | 定义 |
+|---|---|---|
+| B0 | Base | 原始 Qwen3-4B |
+| B1 | Medical SFT-v3 | Base + 医疗监督微调 LoRA，作为冻结 Medical Teacher |
+| B2 | Medical OPD | fresh Base Student 在自身 rollout 上接受 Medical Teacher 评分 |
+| IDT | Fixed Interleaved Distillation | Medical/Base Teacher 以冻结比例交替 |
+| CA-OPD | Constraint-Aware OPD | 根据 Medical/General 能力缺口动态路由 Teacher |
 
-其中 $\theta_0$ 是 Base Model，$\delta$ 是在查看 final test 前确定的通用能力下降阈值。Teacher 调度、超参数筛选、早停和 checkpoint 选择只能读取 controller dev。
-
-项目真正关心的不是“谁的医疗分数最高”，而是：
-
-> 在预先确定的通用能力约束下，哪个方法能获得更高、更稳定的医疗能力，并以合理的训练与系统成本进入可行区域？
-
-### 为什么选择 On-Policy Distillation
-
-SFT 在固定 Teacher 答案上学习；OPD 则让当前 Student 先生成轨迹，再由 Teacher 对**完全相同的 token 序列**计算 logprob。训练信号直接作用于 Student 实际访问的状态分布，可用于研究离线答案与 Student rollout 之间的分布偏移。
-
-这条链路必须验证：
-
-- Teacher 不重新生成另一条 completion；
-- Student/Teacher 在相同 token 和自回归上下文上比较；
-- prompt、padding、EOS 与 completion mask 正确；
-- rollout old logprob 在一次更新内冻结；
-- sampler 在策略更新后正确刷新。
-
-这些条件需要单元测试和最小可解释案例证明，训练 loss 下降不能替代正确性验证。
-
-## 为什么现有方案还不够
-
-| 方法 | 训练信号 | 作用 | 局限 |
-|---|---|---|---|
-| Medical SFT | 固定医疗答案的 token CE | 注入领域知识和回答模式 | 可能造成通用能力遗忘与 exposure bias |
-| Medical OPD | Medical Teacher 对 Student 轨迹的 logprob | 在 Student 自身分布上学习 | 单 Teacher 仍可能持续偏离通用 Base |
-| SAR-OPD | 先 Medical Teacher，再 Base Teacher | 顺序恢复通用能力 | 阶段切换与恢复强度依赖人工设定 |
-| IDT-OPD | Medical/Base Teacher 固定比例交替 | 同时接收两类信号 | 固定比例无法适应动态能力缺口 |
-| **CA-OPD** | 能力缺口驱动的 Teacher 路由 | 显式优化能力约束 | 收益仍需同栈 baseline 与消融验证 |
-
-固定 1:1 不等于两个 Teacher 产生相同优化强度。Teacher–Student KL、序列长度、有效 token 数与 Student 当前能力都会改变实际梯度贡献，因此本项目不把 step 比例直接等同于能力优化比例。
-
-## 相较已有项目，本项目做什么
-
-这里有两层来源：
-
-1. 上游 [shibing624/MedicalGPT](https://github.com/shibing624/MedicalGPT) 提供通用医疗后训练基础；
-2. [llm-agent-rl-lab / 02-opd](https://github.com/KMnO4-zx/llm-agent-rl-lab/tree/main/02-opd) 提供 Medical OPD、SAR 与固定 IDT 的主要参考。
-
-| 维度 | 上游 MedicalGPT | 参考 02-opd | 本仓库新增设计（待实现/验证） |
-|---|---|---|---|
-| 定位 | 医疗 PT/SFT/RLHF/DPO/GRPO/单 Teacher OPD 工具链 | 医疗 OPD、SAR、固定双 Teacher 复现 | 医疗增强下的通用能力约束优化 |
-| 正式栈 | Transformers/TRL 等训练脚本 | PyTRIO 远程服务 | veRL + vLLM + Ray 本地闭环 |
-| Teacher 策略 | 多 Teacher 不是核心问题 | 顺序或固定比例 | 能力缺口驱动的动态路由 |
-| 稳定控制 | 通用训练稳定策略 | 固定 KL/训练配置 | 领域级 KL EMA、安全缩放与裁剪 |
-| 系统拓扑 | 通用单/多卡训练 | 底层资源由服务封装 | 双 4090 角色分离、共享 Backbone 双 Teacher |
-| 评测重点 | 训练、推理和示例 | 医疗/通用选择题 | 约束满足率、Pareto、稳定性、系统效率与消融 |
-| 数据纪律 | 面向通用训练场景 | 参考实验口径 | ID/文本哈希去重，controller dev 与 final test 隔离 |
-
-本项目计划验证四项改进：
-
-1. **约束感知 Teacher 路由**：根据两项能力的标准化缺口更新 $p_M$ 和 $p_G$；
-2. **领域级 KL 安全缩放**：某一领域突然偏离 Teacher 时，主动降低该领域更新尺度；
-3. **共享 Backbone 双 Teacher**：Base Teacher 使用原始 Backbone，Medical Teacher 使用同一 Backbone 加冻结 Medical LoRA；
-4. **无测试集泄漏的约束评测**：controller dev 负责调度和 checkpoint 选择，final test 仅做最终一次性评测。
-
-> [!NOTE]
-> 多教师 OPD 已有 MOPD 等公开研究。本项目不宣称首次提出多教师蒸馏；项目级差异在于能力保持约束、动态路由、领域 KL 控制、双 4090 目标实现与受控消融。
-
-## 方法：CA-OPD
-
-### 1. 同轨迹 token-level OPD
-
-Student 生成轨迹：
+Student 首先生成轨迹：
 
 $$
 y\sim\pi_\theta(\cdot\mid x)
 $$
 
-Teacher 和 Student 在同一条 `prompt + student completion` 上比较：
+Teacher 与 Student 在同一条 `prompt + student completion` 上计算目标 token 概率：
 
 $$
-r_t^{\mathrm{KL}}=\log\pi_\theta(y_t\mid x,y_{<t})-\log\pi_T(y_t\mid x,y_{<t})
+A_t=\beta\left[\log\pi_T(y_t\mid x,y_{<t})-\log\pi_\theta(y_t\mid x,y_{<t})\right]
 $$
 
-$$
-A_t=\beta[\log\pi_T(y_t\mid x,y_{<t})-\log\pi_\theta(y_t\mid x,y_{<t})]
-$$
+训练使用冻结的 rollout old logprob、PPO ratio/clip 和 LoRA 更新。Teacher 不重新生成另一条
+completion，也不接收反向传播。
 
-随后使用 PPO clipping 或等价 importance-ratio policy gradient 更新 Student；Teacher 只执行 forward/prefill，不参与反向传播。
-
-### 2. 约束感知 Teacher 路由
-
-每隔 $K$ 个 optimizer step，在 controller dev 上计算医疗和通用能力 EMA：
+CA-OPD 把问题写为：
 
 $$
-\bar M_k=\rho\bar M_{k-1}+(1-\rho)M_k,\qquad
-\bar G_k=\rho\bar G_{k-1}+(1-\rho)G_k
+\max_\theta M_{\mathrm{medical}}(\theta),\qquad
+M_{\mathrm{general}}(\theta)\ge M_{\mathrm{general}}(\theta_0)-\delta
 $$
 
-标准化能力缺口：
+它根据 Controller 上的能力缺口和迟滞状态调整 Medical/Base Teacher 路由。该机制是本项目
+设计并评估的研究假设，不是已经验证有效的算法结论。
 
-$$
-g_M=\frac{T_M-\bar M_k}{s_M},\qquad
-g_G=\frac{(B_G-\delta)-\bar G_k}{s_G}
-$$
-
-下一训练窗口的 Teacher 概率：
-
-$$
-p_M=\operatorname{clip}\left(
-\frac{e^{g_M/\tau}}{e^{g_M/\tau}+e^{g_G/\tau}},
-p_{\min},p_{\max}\right),\qquad p_G=1-p_M
-$$
-
-其中 $T_M$ 是预先设定的医疗目标，$B_G$ 是 Base Model 在 controller dev 上的通用基准，$s_M$ 与 $s_G$ 是两类指标的归一化尺度；这些量在启用调度前由实验协议或 controller dev 固定，final test 不参与估计。
-
-- **EMA** 降低单次评测噪声；
-- **迟滞状态** 防止在约束边界频繁切换；
-- **概率边界** 防止任一 Teacher 长期饿死；
-- **受控停止** 只依据 controller dev，绝不读取 final test。
-
-### 3. 领域级 KL 安全缩放
-
-$$
-s_d=\min\left(1,\frac{\kappa_d}{\operatorname{EMA}(D_{\mathrm{KL},d})+\epsilon}\right)
-$$
-
-$$
-A_t^{(d)}=\operatorname{clip}\left(
-s_d[\log p_{T_d}(y_t)-\log p_S(y_t)],-A_{\max},A_{\max}\right)
-$$
-
-该机制形成一个待检验假设：当某一领域 KL 异常增大时，缩小该领域更新能否减少极端 advantage、clip fraction 和策略熵快速下降？它不预先保证性能提升。
-
-## 双 RTX 4090 系统设计
+## 系统实现
 
 ```mermaid
 flowchart LR
-    subgraph TrainData["训练与控制数据"]
-        MP["Medical prompts<br/>仅问题"]
-        GP["General anchors<br/>不含答案"]
-        DEV["Controller dev"]
-    end
-
-    DEV --> GAP["Ability gap<br/>EMA + hysteresis"]
-    GAP --> ROUTER["CA Router<br/>sample next window"]
-    ROUTER -->|"medical batch"| MP
-    ROUTER -->|"general batch"| GP
-
-    subgraph GPU0["GPU 0 · Student"]
-        POLICY["Qwen3 Base<br/>trainable LoRA"]
-        ROLLOUT["Student rollout<br/>old logprob"]
-        UPDATE["KL scaling<br/>PPO update"]
-        POLICY --> ROLLOUT
-        UPDATE --> POLICY
-    end
-
-    MP --> ROLLOUT
-    GP --> ROLLOUT
-
-    subgraph GPU1["GPU 1 · Shared Teacher Service"]
-        BASE["Shared Qwen3 Backbone"]
-        SELECT["Teacher adapter selector<br/>one route per batch"]
-        BT["Base Teacher"]
-        MT["Medical Teacher<br/>frozen LoRA"]
-        SCORE["Selected Teacher logprob"]
-        BASE --> SELECT
-        SELECT -->|"base route"| BT
-        SELECT -->|"medical LoRA route"| MT
-        BT --> SCORE
-        MT --> SCORE
-    end
-
-    ROUTER -->|"teacher_id"| SELECT
-    ROLLOUT -->|"same tokens"| SELECT
-    SCORE --> UPDATE
-
-    POLICY -->|"candidate checkpoints"| CKPT["Controller-dev<br/>checkpoint selection"]
-    DEV --> CKPT
-    CKPT --> FROZEN["Frozen config + checkpoint"]
-    FROZEN --> TEST["Final test<br/>single final evaluation"]
-    TEST --> REPORT["Final report"]
+    DATA["Prompt-only OPD pools"] --> STUDENT["Qwen3-4B Student\ntrainable LoRA"]
+    STUDENT --> ROLLOUT["Student rollout\nfrozen old logprob"]
+    ROLLOUT --> MED["Medical Teacher\nBase + frozen SFT LoRA"]
+    ROLLOUT --> BASE["Base Teacher"]
+    MED --> UPDATE["Teacher scoring\nPPO-style update"]
+    BASE --> UPDATE
+    UPDATE --> TX["Candidate transaction\nhealth gates + rollback"]
+    TX --> STUDENT
+    CTRL["Label-isolated Controller"] --> ROUTER["IDT / CA routing"]
+    ROUTER --> MED
+    ROUTER --> BASE
+    STUDENT --> CKPT["Atomic checkpoint\nLoRA + optimizer + RNG + cursor"]
+    CKPT --> CONFIRM["Frozen confirmation\nprediction first, label join later"]
 ```
 
-图中 final test 只接收由 controller dev 选定并冻结的配置与 checkpoint，且没有任何反向边进入 Controller、Router 或训练过程。
+最终正式训练后端是项目自研的 `Transformers + PEFT` 三策略 production loop。veRL/vLLM
+配置、适配器和预检被保留用于兼容与诊断，但本项目不把主实验描述为“完整 veRL trainer 结果”。
 
-| 资源 | 角色 | 关键约束 |
+关键实现包括：
+
+- Qwen3-4B BF16 + LoRA；
+- SFT 的 memory-balanced DDP；
+- Base Student、Base Teacher、Medical Teacher 三种策略身份绑定；
+- Transformers direct-logit MCQ scorer；
+- prompt-equal objective 与每条 trajectory 独立 trust budget；
+- 候选更新的完整事务回滚；
+- LoRA、optimizer、scheduler、CPU/CUDA RNG、cursor、sampler version 的原子恢复；
+- 配置、数据、模型、checkpoint 与结果的 SHA-256 身份链；
+- confirmation/final 独立 capability，训练器与路由器无法读取其标签。
+
+## 数据协议
+
+公开数据只作为原始来源，仓库不重新分发模型权重、MedQA 原始题目或完整训练数据。
+
+| 数据角色 | 来源 | 用途与隔离 |
 |---|---|---|
-| GPU 0 | Qwen3 Student、LoRA 训练、rollout | 训练与生成分时复用显存，更新后刷新 sampler |
-| GPU 1 | Base/Medical Teacher scoring | 共享 Base 权重，只交换 token、logprob 和必要元数据 |
-| CPU/Ray | 数据、调度与任务编排 | 减少 4090 无 NVLink 下的高频参数通信 |
+| Medical SFT | Medical-O1 中文 + CMB train bridge | 仅 SFT 可读取答案/推理 |
+| Medical OPD | Medical-O1 holdout + CMB train | 导出为 prompt-only，物理删除监督字段 |
+| General Anchors | 许可合格的非医疗指令/考试子源 | prompt-only，只供 Base Teacher 路线 |
+| Medical Controller | 300 题 | 开发集选模，label 仅 evaluator 可读 |
+| General Controller | 209 题、8 个非医疗学科 | 约束与开发集分析 |
+| Medical confirmation | 预冻结 MedQA validation 600 题 | checkpoint 冻结后一次性 B2 确认 |
+| Final | 独立 capability | 本项目从未访问 |
 
-目标软件栈：
+训练、Controller、confirmation 与 final 使用稳定 ID、规范化文本哈希和近重复 group 做隔离；
+P10 审计中 confirmation 与所有训练/Controller pool 的 sample/content/group overlap 均为 0。
 
-| 环节 | 计划采用 |
-|---|---|
-| SFT | Transformers + TRL `SFTTrainer` + PEFT LoRA |
-| OPD | veRL OPD / PG-OPD |
-| Rollout / Teacher | vLLM generate 与 prefill/logprob 服务 |
-| 多 Teacher | vLLM multi-LoRA 或自定义 adapter router |
-| 编排 / 配置 / 测试 | Ray · YAML/Hydra · pytest |
+## 主结果
 
-## 实验协议
+### 1. SFT-v3 独立确认
 
-完整协议以 [PROJECT_PLAN.md](PROJECT_PLAN.md) 为唯一事实源。
+| Route | Correct | Accuracy | 相对 Base | Paired 95% CI | McNemar p |
+|---|---:|---:|---:|---:|---:|
+| B0 Base | 443/600 | 73.83% | — | — | — |
+| B1 SFT-v3 | 467/600 | 77.83% | +4.00pp | `[+1.17,+7.00]pp` | 0.0116 |
 
-### 模型与算力
+这是冻结的 development confirmation，不是 final test。当前实验没有观察到最初假设的 SFT
+通用能力遗忘：在同口径 General Controller 上，B1 也高于 B0。
 
-| 层级 | 模型/平台 | 用途 |
+### 2. 同口径 Controller
+
+| Route | Medical 300 | General 209 | 相对 B0 Medical / General | 结论 |
+|---|---:|---:|---:|---|
+| B0 Base | 73.00% | 61.244% | — | Base |
+| B1 SFT-v3 | 80.00% | 66.507% | +7.00 / +5.263pp | 两项均提升 |
+| B2 step120 | 72.33% | 61.244% | −0.67 / 0.00pp | Medical 未提升 |
+| IDT step120 | 72.33% | 60.766% | −0.67 / −0.478pp | 满足点估计约束，但未提升 Medical |
+| CA step120 | 72.00% | 60.287% | −1.00 / −0.957pp | 未优于 IDT |
+
+### 3. B2 训练剂量曲线
+
+| Accepted step | Medical | General |
+|---:|---:|---:|
+| 120 | 72.33% | 61.244% |
+| 150 | 72.67% | 60.287% |
+| 180 | 72.00% | 59.330% |
+| 200 | 73.67% | 58.852% |
+| **240** | **74.33%** | **60.287%** |
+| 270 | 72.67% | 59.330% |
+| 300 | 72.67% | 60.287% |
+
+step240 是预注册规则选择的开发集最佳 checkpoint：相对 B0 净增加 4/300，Medical 点估计
+`+1.33pp`；但 paired CI 跨 0，且 step270/300 回落，因此只能进入独立确认，不能直接当作
+算法提升结论。
+
+### 4. P10：600 题一次性 B2 确认
+
+| Route | Correct | Accuracy |
+|---|---:|---:|
+| B0 Base | 443/600 | 73.8333% |
+| B2 step240 | 443/600 | 73.8333% |
+| Difference | 0 | 0.00pp |
+
+- improved / regressed / unchanged：`10 / 10 / 580`；
+- paired bootstrap 95% CI：`[-1.50,+1.50]pp`；
+- exact McNemar：`p=1.0`；
+- B2 prediction 在确认前从未访问该集合；
+- 所有 prediction 先冻结并生成 SHA，随后独立打开 label；
+- final access 始终为 0。
+
+最终状态为 `b2_step240_confirmation_not_supported`。项目没有改用其他 checkpoint、seed、
+prompt 或输出长度重新评测。
+
+## 训练与工程指标
+
+| Run | 规模 | 已计量时间 | 峰值显存 |
+|---|---:|---:|---:|
+| SFT-v3 | 600 optimizer steps | 约 30.4 min | 13.60 / 13.50 GiB |
+| IDT | 120 accepted steps | 约 8.378 h | 15.89 / 16.13 GiB |
+| CA-OPD | 120 accepted steps | 约 6.190 h | 15.89 / 16.15 GiB |
+| P9 B2 扩展 | 180 accepted updates | 4.495 h meter 覆盖 | 15.90 / 15.55 GiB |
+
+费用字段只报告由实测进程时间和当时 `2.96 CNY/instance-hour` 推导的估计值；平台完整实付账单
+不可读取时保持 `null`，不会用估算冒充实付。
+
+## 关键故障与修复
+
+| 问题 | 诊断 | 处理 |
 |---|---|---|
-| 开发 | `Qwen3-1.7B` | 数学正确性、20–50 step 冒烟、超参筛选、完整消融与多 seed |
-| 主结果 | `Qwen3-4B` | 在冻结配置上运行关键 baseline 与 CA-OPD |
-| 正式平台 | AutoDL `2 × RTX 4090 24GB` | 所有主结果使用同一主要软件栈和评测口径 |
+| DataParallel 在 GPU0 聚合 logits 时 OOM | 单卡承担聚合峰值，而非总显存不足 | 改为 memory-balanced DDP，保持有效 batch 与损失定义 |
+| vLLM LoRA `prompt_logprobs` 重复漂移 | Base 稳定、LoRA route 超出冻结容差；未确认具体底层内核原因 | 正式选择题评分改为 Transformers direct logits，vLLM 路径降级为诊断用途 |
+| 单条 prompt 出现极端梯度 | 短 CMB completion 产生高梯度，但简单最小长度会改变数据来源权重 | 为每条等权 trajectory 分配相同 trust budget，再保留全局裁剪 |
+| 开发集最佳 checkpoint 未复现 | step240 在 300 题净增 4 题，600 题变为 10 改善/10 退化 | 接受独立确认结果，停止 B2、IDT/CA 与结果后调参 |
 
-正式付费训练只在配置、数据、测试、CPU dry-run 和单 GPU 短跑通过，并得到用户明确许可后启动。
+这些修复分别解决运行正确性、显存与证据可靠性问题；它们不被包装成已经验证的算法性能提升。
 
-### 数据边界
+## 与参考项目的关系
 
-| 数据角色 | 训练可见字段 | 可驱动路由/选 checkpoint | 进入 final test |
-|---|---|:---:|:---:|
-| Medical SFT | question + answer/reasoning | 否 | 否 |
-| Medical OPD prompts | 仅问题 | 否 | 否 |
-| General anchors | 题目与选项，不含答案 | 否 | 否 |
-| Controller dev | 确定性开发评测 | 是 | 否 |
-| Final test | 仅最终评测 | **禁止** | 是 |
+本项目参考了：
 
-样本必须保留稳定 `sample_id`、来源、split、domain 和规范化文本哈希；SFT、OPD、controller dev 与 final test 互斥，并保存版本化 manifest。
+- [shibing624/MedicalGPT](https://github.com/shibing624/MedicalGPT) 的医疗后训练工程；
+- [llm-agent-rl-lab / 02-opd](https://github.com/KMnO4-zx/llm-agent-rl-lab/tree/main/02-opd) 的 Medical OPD、SAR 与 IDT 问题设置。
 
-### Baseline 与消融
+本项目不是绝对数值复刻。模型版本、训练后端、group size、数据划分和评测协议都不同，因此
+参考项目数字不与本项目数字放入同一主结果表。本仓库额外强调数据角色隔离、prediction-first
+评测、事务回滚、完整恢复、SHA 身份链和独立确认。
 
-| ID | 方法 | 回答的问题 | 状态 |
-|---|---|---|---|
-| B0 | Base | 原始能力基线 | 📋 |
-| B1 | Medical SFT | 医疗增益是否伴随通用遗忘 | 📋 |
-| B2 | Medical OPD | 单 Teacher OPD 是否有效 | 📋 |
-| B3 | SAR-OPD | 顺序恢复能否保持两项能力 | 📋 |
-| B4 | IDT 1:1 | 固定双 Teacher 基线 | 📋 |
-| B5 | IDT 2:1 | 排除“只是比例没调好” | 📋 |
-| O1 | CA-OPD | 动态约束方法 | 📋 |
+多教师 OPD 已有公开相关工作；本项目不声称首次提出多教师蒸馏，也不声称 SOTA。
 
-关键消融包括：固定 `1:1` vs `2:1`、去动态路由、去 KL 缩放、不同 controller 窗口 $K$、不同约束 $\delta$、group size `2` vs `4`。1.7B 执行完整消融与多 seed，4B 只验证最重要结论。
+## 复现
 
-### 指标
+### 公开 CPU 验证
 
-| 维度 | 核心指标 |
+```bash
+git clone https://github.com/Silkbamboo/CA-OPD-MedicalGPT.git
+cd CA-OPD-MedicalGPT
+
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+bash scripts/run_public_checks.sh
+```
+
+只验证公开聚合结果，不安装训练依赖：
+
+```bash
+python scripts/verify_public_results.py
+```
+
+合成数据 smoke：
+
+```bash
+python -m src.data.build_splits \
+  --config configs/data/fixture_cpu.yaml \
+  --output-dir outputs/data/fixture-smoke
+```
+
+CPU toy-OPD 闭环：
+
+```bash
+python -m src.opd.loop_cli \
+  --config configs/opd/dev_cpu.yaml \
+  --output-dir outputs/opd-cpu-demo
+```
+
+该 toy loop 只验证 rollout、Teacher scoring、路由、更新和 artifact 写入；其中的 scripted
+accuracy 不是 Qwen3-4B 能力结果。公开快照在发布环境的实测结果为 `313 passed, 1 skipped`，
+跳过项是未随仓库分发的真实 Qwen3 tokenizer 检查。
+
+公开测试只使用合成 fixture；不会下载模型、打开受限数据或访问 final。
+
+### GPU 协议复现边界
+
+完整训练依赖、协议快照和实现分别位于：
+
+- [`env/requirements-opd.txt`](env/requirements-opd.txt)：双 3090 实测软件栈；
+- [`configs/public`](configs/public)：脱敏后的 SFT、B2/IDT/CA 与 P10 协议快照；
+- [`src/sft`](src/sft)：DDP SFT；
+- [`src/opd`](src/opd)：三策略 OPD、路由、事务更新与恢复；
+- [`src/eval`](src/eval)：direct-logit Controller 与 prediction-first confirmation。
+
+模型、LoRA、原始数据、逐题预测和 checkpoint 不进入 Git。公开协议中的路径已替换为仓库内
+`artifacts/...` 逻辑位置；复现实验者必须自行取得第三方资产、重建 manifest，并为新运行生成
+新的 Git/SHA 身份，不能冒用历史 artifact。完整说明见
+[`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md)。
+
+## 仓库导航
+
+| 路径 | 内容 |
 |---|---|
-| 能力 | Medical/General accuracy、$\Delta M$、$\Delta G$、是否满足 $\Delta G\ge-\delta$ |
-| 稳定性 | 分领域 reverse KL、entropy、advantage/clip fraction、最佳与最终 checkpoint 差距 |
-| 多目标 | Pareto frontier、约束内最佳医疗分数、time-to-feasible |
-| 系统 | 峰值显存、rollout/Teacher tokens/s、step time、同步开销、GPU-hour 与费用 |
+| [`docs/METHOD.md`](docs/METHOD.md) | 方法、训练数学与路由定义 |
+| [`docs/DATA_PROTOCOL.md`](docs/DATA_PROTOCOL.md) | 数据角色、许可与泄漏隔离 |
+| [`docs/RESULTS.md`](docs/RESULTS.md) | 完整统计与可声明边界 |
+| [`docs/ENGINEERING_NOTES.md`](docs/ENGINEERING_NOTES.md) | 关键故障、诊断和修复 |
+| [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md) | CPU 验证与 GPU 重建边界 |
+| [`artifacts/results`](artifacts/results) | 无原题、无逐题预测的机器可读汇总 |
 
-## 项目状态与结果
+## 仓库内容与公开边界
 
-状态语义：`✅ 已验证` · `🧪 冒烟通过` · `🚧 实现中` · `📋 计划中` · `🔒 方案已确定`。
+公开仓库包含：
 
-| 工作项 | 当前状态 | 必须提供的完成证据 |
-|---|:---:|---|
-| 研究问题、模型、方法和正式栈 | 🔒 | `PROJECT_PLAN.md` |
-| 数据 schema、manifest 与泄漏测试 | 📋 | 版本化 manifest + pytest |
-| token alignment、mask、advantage 测试 | 📋 | 可解释单测 + 最小集成测试 |
-| Medical SFT / OPD / SAR / IDT | 📋 | 同栈配置、metadata、日志与 checkpoint |
-| CA-OPD 路由与 KL 控制 | 📋 | 单测、消融和多 seed |
-| 共享 Backbone 双 Teacher | 📋 | adapter 路由、显存与吞吐记录 |
-| Qwen3-4B 主实验 | 📋 | 同栈主结果与完整 run 产物 |
-| 新主线 final test | 尚未运行 | 协议禁止提前使用；checkpoint 固定后单次评测 |
+- 核心源码、配置模板和测试；
+- 合成 fixture 与可重建的数据 manifest；
+- 脱敏后的技术 ADR；
+- 聚合实验结果和复现说明；
+- 不包含原始题目的图表与统计。
 
-当前公开仓库先发布研究说明、实验协议与路线图。迁移源工作区包含 Transformers/TRL/PEFT 训练脚本，以及前期 Qwen2.5-1.5B 医疗 SFT、DPO、GRPO 与规则评测资产；这些内容将在完成清理与复现审核后分批通过 Git 迁入。它们不属于 Qwen3 + veRL/vLLM OPD 主线，也不会进入 CA-OPD 主结果表。
+公开仓库不包含：
 
-当前没有可用于 CA-OPD 主结论的正式结果。未来主表固定报告 Medical、General、$\Delta M$、$\Delta G$、约束是否满足和 seed 数；每行链接 YAML、git SHA、数据 manifest、metadata、原始 metrics、checkpoint 选择依据与失败记录。图表由原始产物自动生成，不手工填写。
+- 模型权重、LoRA、optimizer state 与 checkpoint；
+- MedQA 原始题目、受许可证限制的数据和逐题 label；
+- 原始 rollout/prediction 文本；
+- API key、平台凭据和本机绝对路径；
+- 面试题库、简历草稿、代理交接记录和内部调查全文。
 
-## 复现门槛与路线图
+## 局限与伦理边界
 
-新 OPD 主线尚未达到可复现发布门槛，因此当前不提供无法执行的 Quick Start。发布运行入口前必须完成：
+- 主实验只有一个随机种子；
+- OPD 使用 `group_size=1`；
+- IDT 与 CA-OPD 只完成 120 accepted steps；
+- Medical 与 General 主要是选择题能力，不代表临床诊断或医疗安全；
+- P10 没有支持 B2 相对 Base 的稳定提升；
+- 当前数据没有支持 CA-OPD 优于 IDT；
+- final test 从未运行；
+- 正式 OPD 后端是自研 Transformers/PEFT loop，而不是完整 veRL trainer；
+- 结果不能外推到其他模型、数据、group size 或训练预算。
 
-1. 配置 schema 与数据 manifest 检查；
-2. split 互斥、文本哈希去重和 final-test 隔离测试；
-3. OPD 数学、路由与 checkpoint/sampler 同步测试；
-4. CPU/小模型单步 dry-run 与单 GPU 短跑；
-5. 环境、seed、run metadata、资源与费用上限记录。
+本项目仅用于算法研究和工程复现，不能用于临床诊断、处方或治疗决策。
 
-路线图：
+## License
 
-- **Phase 0 · 正确性**：数据、token alignment、mask、advantage、PPO ratio、checkpoint 与 dry-run；
-- **Phase 1 · 1.7B baseline**：Base、Medical SFT、Medical OPD、SAR、IDT；
-- **Phase 2 · 1.7B 改进**：CA-OPD、关键消融、多 seed，并冻结 4B 配置；
-- **Phase 3 · 4B 主实验**：统一正式栈运行关键 baseline 与 O1，随后执行 final test；
-- **Phase 4 · 分析交付**：Pareto、稳定性、案例、显存/吞吐、复现文档与简历描述。
-
-只有在端到端 OPD、同栈 baseline、CA-OPD 消融、数据隔离、结果图表和复现入口全部具备后，项目才标记为完成。
-
-## 局限与责任边界
-
-- CA-OPD 当前是待实现、待验证的项目级改进，不代表已经优于 IDT、SAR 或单 Teacher OPD；
-- 多教师 OPD 并非本项目首次提出，相关工作包括 MOPD；
-- 双 RTX 4090 的系统结论不能直接外推到多机集群；
-- 选择题和行为诊断集不能证明临床安全、诊断或治疗能力；
-- 本项目不构成医疗建议，不用于临床诊断、治疗决策或患者分诊；
-- 模型、数据和第三方组件仍受各自许可证与使用条款约束。
-
-## 参考与致谢
-
-- [shibing624/MedicalGPT](https://github.com/shibing624/MedicalGPT)：本仓库继承的医疗大模型训练基础；
-- [llm-agent-rl-lab / 02-opd](https://github.com/KMnO4-zx/llm-agent-rl-lab/tree/main/02-opd)：Medical OPD、SAR 与固定 IDT 的主要参考；
-- [veRL: On-Policy Distillation](https://verl.readthedocs.io/en/latest/algo/opd.html)；
-- [veRL: RL(HF) with LoRA](https://verl.readthedocs.io/en/latest/advance/ppo_lora.html)；
-- [vLLM: LoRA Adapters](https://docs.vllm.ai/en/latest/features/lora/)；
-- [TRL: SFT Trainer](https://huggingface.co/docs/trl/sft_trainer)；
-- [Qwen3-4B Model Card](https://huggingface.co/Qwen/Qwen3-4B)；
-- [MiniLLM](https://arxiv.org/abs/2306.08543) 与 [On-Policy Distillation of Language Models](https://arxiv.org/abs/2306.13649)；
-- [MOPD: Multi-Teacher On-Policy Distillation](https://arxiv.org/abs/2606.30406)。
-
-感谢上述项目与研究提供的方法和工程基础。本项目只使用“设计、实现、验证、改进”等措辞，不把已有思想重新包装为首次提出。
-
-## License & Disclaimer
-
-代码继承并遵循 [Apache License 2.0](LICENSE)；模型权重、数据和第三方组件需同时遵循各自许可证。
-
-本仓库仅用于大语言模型研究，不承担因使用代码、数据或模型造成的直接或间接损失。医疗输出不得替代执业医生判断；如涉及真实健康问题，请咨询具备资质的医疗专业人员。
+代码按 [Apache-2.0](LICENSE) 发布。各数据集和基础模型继续遵循其各自许可证；本仓库不因代码
+许可证而重新授权第三方数据或模型。

@@ -1,0 +1,94 @@
+# CPU dry-run configuration for the OPD reference loop.
+#
+# Purpose (docs/METHOD.md §14 Phase 0): prove the closed loop - rollout, frozen
+# old logprobs, teacher scoring on identical tokens, reverse-KL advantage,
+# domain KL safety scaling, PPO update, window-level routing, checkpoint
+# save/resume - on a machine with no GPU.
+#
+# Nothing in this file may be used for reported results: the model is a toy LM,
+# the prompts are synthetic tokens and the controller-dev evaluation is a
+# scripted stub. Phase 1 replaces model/data/eval with Qwen3-1.7B + real splits
+# + the MCQ evaluator, keeping the same loop contract.
+
+run:
+  name: opd-cpu-dryrun
+  purpose: "Phase 0 correctness: end-to-end CA-OPD closed loop on CPU"
+  baseline_id: O1-dryrun
+  seed: 42
+  output_root: outputs/opd-cpu-dryrun
+  implementation: cpu_reference
+
+model:
+  kind: toy
+  vocab_size: 32
+  hidden_size: 16
+  num_heads: 2
+  max_position: 64
+  pad_token_id: 0
+  eos_token_id: 1
+  # the medical teacher "adapter": prefers one token, so medical-routed batches
+  # produce a measurably different advantage signal than base-routed ones
+  medical_teacher_bias_token: 17
+  medical_teacher_bias_strength: 3.0
+
+data:
+  kind: synthetic
+  num_medical_prompts: 8
+  num_general_prompts: 8
+  prompt_length: 4
+
+rollout:
+  prompt_batch_size: 2
+  group_size: 2          # docs/METHOD.md §7.2 initial conservative value
+  max_new_tokens: 6
+  temperature: 1.0
+  top_k: 0
+  include_eos_in_loss: true
+
+opd:
+  beta: 1.0
+  clip_range: 0.2
+  advantage_max: 5.0
+  kl_kappa_medical: 1.0
+  kl_kappa_general: 1.0
+  kl_ema_rho: 0.9
+  reduction: token_mean
+  ppo_epochs: 1
+
+optim:
+  lr: 0.05
+  max_steps: 12
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+
+router:
+  kind: constraint_aware
+  fixed_p_medical: 0.5
+  single_teacher_id: medical
+  config:
+    medical_target: 0.65
+    general_baseline: 0.50
+    delta: 0.01
+    scale_medical: 0.05
+    scale_general: 0.05
+    rho: 0.7
+    tau: 1.0
+    p_min: 0.2
+    p_max: 0.8
+    window_steps: 4
+    windows_below_to_recover: 2
+    windows_above_to_release: 1
+    early_stop_patience: 3
+    early_stop_min_improvement: 0.002
+    initial_p_medical: 0.5
+
+controller_dev:
+  mode: synthetic
+  medical_start: 0.40
+  medical_gain_per_window: 0.05
+  general_start: 0.52
+  general_loss_per_medical_window: 0.03
+
+checkpoint:
+  every_steps: 4
+  keep_last: 2

@@ -1,0 +1,37 @@
+{
+  "schema_id": "ca-opd/p7-ca-opd-stage120/v4",
+  "schema_version": 4,
+  "method_id": "CA-OPD-v2",
+  "inherits": "configs/runs/qwen3_4b_stage120_common_v4.json",
+  "fresh_v0_required": true,
+  "actions": {
+    "medical": "2_o1_plus_2_cmb_all_medical_teacher",
+    "general": "2_coig_leetcode_plus_2_gpt4_llm_all_base_teacher"
+  },
+  "adaptive_routing": true,
+  "router": {
+    "medical_target": 0.8,
+    "general_baseline": 0.6124401913875598,
+    "delta": 0.01,
+    "scale_medical": 0.05,
+    "scale_general": 0.05,
+    "rho": 0.7,
+    "tau": 1.0,
+    "p_min": 0.2,
+    "p_max": 0.8,
+    "window_steps": 30,
+    "windows_below_to_recover": 2,
+    "windows_above_to_release": 1,
+    "initial_p_medical": 0.5,
+    "random_tape_seed": 42
+  },
+  "domain_kl_safety": {
+    "kappa_medical": 1.0,
+    "kappa_general": 1.0,
+    "rho": 0.9,
+    "eps": 1e-6,
+    "damp_only": true
+  },
+  "written_before_idt_or_ca_results": true,
+  "final_authorized": false
+}

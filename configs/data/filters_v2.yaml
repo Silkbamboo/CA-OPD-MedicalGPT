@@ -1,0 +1,30 @@
+data_protocol_version: ca-opd-data-v2
+normalization: conservative_nfkc_ordered_options
+near_duplicate:
+  method: character_3gram_jaccard_candidates
+  threshold: 0.92
+  max_pairwise_records: 5000
+forbidden_supervision_keys:
+  - answer
+  - answer_idx
+  - label
+  - reasoning
+  - response
+  - solution
+  - output
+  - completion
+ceval_subject_allowlist:
+  - computer_network
+  - college_programming
+  - advanced_mathematics
+  - discrete_mathematics
+  - college_physics
+  - logic
+  - chinese_language_and_literature
+  - college_economics
+coig:
+  reject_unknown_license: true
+  formal_allowed_subsource_licenses:
+    leetcode: CC-BY-SA-4.0
+    human_value: Apache-2.0
+  formal_blocked_pending_review: [translated, exam]

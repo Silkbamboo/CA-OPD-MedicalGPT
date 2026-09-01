@@ -1,0 +1,20 @@
+{
+  "artifact_kind": "public_sft_v3_confirmation_summary",
+  "schema_version": 1,
+  "status": "teacher_frozen_confirmed",
+  "evaluation_role": "medical_teacher_confirmation_dev",
+  "final_test": false,
+  "total": 600,
+  "base": {"correct": 443, "accuracy": 0.7383333333333333},
+  "sft_v3_step450": {"correct": 467, "accuracy": 0.7783333333333333},
+  "delta": 0.04,
+  "delta_percentage_points": 4.0,
+  "improved": 54,
+  "regressed": 30,
+  "unchanged": 516,
+  "paired_bootstrap_95_ci": [0.011666666666666667, 0.07],
+  "bootstrap_seed": 42,
+  "bootstrap_samples": 10000,
+  "mcnemar_exact_two_sided_p": 0.011634454119925829,
+  "final_access_count": 0
+}

@@ -1,0 +1,24 @@
+{
+  "artifact_kind": "public_b2_dose_curve_summary",
+  "schema_version": 1,
+  "status": "development_peak_not_independently_confirmed",
+  "medical_total": 300,
+  "general_total": 209,
+  "base": {"medical_correct": 219, "general_correct": 128},
+  "points": [
+    {"step": 120, "medical_correct": 217, "general_correct": 128},
+    {"step": 150, "medical_correct": 218, "general_correct": 126},
+    {"step": 180, "medical_correct": 216, "general_correct": 124},
+    {"step": 200, "medical_correct": 221, "general_correct": 123},
+    {"step": 240, "medical_correct": 223, "general_correct": 126},
+    {"step": 270, "medical_correct": 218, "general_correct": 124},
+    {"step": 300, "medical_correct": 218, "general_correct": 126}
+  ],
+  "selected_development_step": 240,
+  "selected_medical_delta": 0.013333333333333308,
+  "selected_medical_paired_bootstrap_95_ci": [-0.01, 0.04],
+  "selected_medical_mcnemar_exact_two_sided_p": 0.4239501953125,
+  "no_more_b2_training": true,
+  "no_more_b2_tuning": true,
+  "final_access_count": 0
+}

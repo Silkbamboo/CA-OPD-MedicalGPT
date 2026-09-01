@@ -1,0 +1,18 @@
+data_protocol_version: ca-opd-data-v2
+schema_version: 2
+build_mode: smoke
+seed: 42
+generation_time: "2026-08-03T00:00:00Z"
+sources_config: sources_v2.yaml
+splits_config: splits_v2.yaml
+filters_config: filters_v2.yaml
+enabled_sources: [medical_o1, cmb, medqa_zh, coig, ceval]
+rows_per_source: 20
+output_root: ../../data/interim/smoke_v2
+manifest_root: ../../data/manifests/smoke_v2
+report_root: ../../reports
+tokenizer:
+  mode: unavailable
+  expected_model_family: Qwen3
+  enable_thinking: false
+  audit_status: pending_qwen3_tokenizer

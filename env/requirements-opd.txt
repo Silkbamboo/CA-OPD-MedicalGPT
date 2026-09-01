@@ -1,0 +1,36 @@
+# Candidate direct pins for the Qwen3 + veRL/vLLM production environment.
+#
+# IMPORTANT: this is NOT the resolved lock. These releases were checked against
+# PyPI metadata on 2026-07-30, including the compatibility facts below:
+#   vllm 0.11.0 -> torch==2.8.0, transformers>=4.55.2, ray[cgraph]>=2.48.0
+#   verl 0.8.0  -> vllm>=0.8.5,<=0.12.0 (the vllm extra)
+#   trl 0.23.0  -> transformers>=4.56.1
+# Generate requirements-opd.lock only after target_env_smoke.py passes in the
+# actual CUDA 12.8 / dual-3090 target. Do not install this over the legacy env.
+
+# Runtime / model stack
+torch==2.8.0
+transformers==4.56.2
+tokenizers==0.22.0
+safetensors==0.6.2
+accelerate==1.10.1
+
+# SFT / LoRA
+trl==0.23.0
+peft==0.17.1
+
+# OPD / rollout / orchestration
+verl==0.8.0
+vllm==0.11.0
+ray[default,cgraph]==2.48.0
+tensordict==0.10.0
+
+# Data and project utilities
+datasets==3.6.0
+PyYAML==6.0.2
+pytest==9.1.1
+# veRL 0.8.0 declares numpy<2.0; 1.26.4 is the final Python 3.12-compatible 1.x release.
+numpy==1.26.4
+
+# GPU-only build: install after torch with --no-build-isolation.
+flash-attn==2.8.3

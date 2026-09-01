@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+title: "CA-OPD-MedicalGPT: controlled medical capability transfer experiments"
+message: "If this research artifact is useful, please cite this repository."
+type: software
+authors:
+  - family-names: Cao
+    given-names: Zejiang
+repository-code: "https://github.com/Silkbamboo/CA-OPD-MedicalGPT"
+license: Apache-2.0

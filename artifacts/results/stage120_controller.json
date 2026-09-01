@@ -1,0 +1,25 @@
+{
+  "artifact_kind": "public_stage120_controller_summary",
+  "schema_version": 1,
+  "status": "complete",
+  "scorer": "transformers_direct_logits",
+  "medical_total": 300,
+  "general_total": 209,
+  "routes": {
+    "B0": {"medical_correct": 219, "general_correct": 128},
+    "B1_sft_v3": {"medical_correct": 240, "general_correct": 139},
+    "B2_step120": {"medical_correct": 217, "general_correct": 128},
+    "IDT_step120": {"medical_correct": 217, "general_correct": 127},
+    "CA_step120": {"medical_correct": 216, "general_correct": 126}
+  },
+  "ca_minus_idt_step120": {
+    "medical_delta": -0.0033333333333334103,
+    "medical_paired_bootstrap_95_ci": [-0.016666666666666666, 0.01],
+    "medical_mcnemar_exact_two_sided_p": 1.0,
+    "general_delta": -0.004784688995215225,
+    "general_paired_bootstrap_95_ci": [-0.028708133971291867, 0.014354066985645933],
+    "general_mcnemar_exact_two_sided_p": 1.0
+  },
+  "confirmation_access_count": 0,
+  "final_access_count": 0
+}

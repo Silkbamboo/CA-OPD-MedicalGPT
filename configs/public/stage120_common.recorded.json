@@ -1,0 +1,72 @@
+{
+  "schema_id": "ca-opd/p7-stage120-common/v4",
+  "schema_version": 4,
+  "status": "protocol_definition_pre_gpu_qualification",
+  "model": {
+    "base_path": "artifacts/models/Qwen3-4B",
+    "base_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "tokenizer_revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "precision": "bfloat16",
+    "attention_backend": "eager"
+  },
+  "teacher": {
+    "adapter_path": "artifacts/outputs/qwen3-4b-medical-sft-v3-mcq-dominant-seed42/checkpoint-450",
+    "ordered_sha256": "a0951a7d854f4907e6779408353455dc8e0f4af14b05fa505aba68bee70f8bc2",
+    "weight_sha256": "7866a15f1e3308cab5c4814d974c8a5368785013a137e66adb0ff0e6828adf63",
+    "manifest_path": "artifacts/outputs/qwen3-4b-medical-teacher-sft-v3-step450/teacher_manifest.json",
+    "manifest_sha256": "80670f6e32e02bc1ea619bc94b561fedd872418b55621cbbfafbd2d0d36b5a67"
+  },
+  "data": {
+    "opd_manifest_path": "data/manifests/frozen_v2/opd_manifest.json",
+    "opd_manifest_sha256": "9f1d096d06b635737e1b90be3b92d6de32fd64b03fbcd97813e42d0a2ee88a99",
+    "general_anchor_path": "artifacts/data/formal_v2/general_anchors.jsonl",
+    "general_anchor_records_sha256": "8fcf8e16b53fc9cfe356865e0f046cd9c64eee1a71b8c628b70e0de9338169c0",
+    "general_anchor_count": 3793,
+    "source_policy_path": "configs/data/sources_v2.yaml",
+    "source_policy_sha256": "5534bd59536004e828717c4b1927f98001114c098e556fb0c1eb351191f453f9",
+    "leakage_report_path": "reports/leakage_mvp_frozen_v2.json",
+    "leakage_report_sha256": "b66cafea5e030871b8bb87e71effd72d897846a669dac68af880ac873dd7330a",
+    "manual_audit_status": "waived_for_time_constrained_interview_mvp_not_human_reviewed",
+    "prompt_only": true,
+    "supervision_fields": 0,
+    "final_hash_overlap": 0,
+    "controller_hash_overlap": 0,
+    "public_checkpoint_release": false
+  },
+  "training": {
+    "seed": 42,
+    "accepted_optimizer_commits": 120,
+    "max_response_tokens": 1024,
+    "group_size": 1,
+    "prompt_batch": 4,
+    "microbatch": 1,
+    "gradient_accumulation": 4,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "lora_target_modules": "all-linear",
+    "optimizer": "AdamW",
+    "learning_rate": 1e-5,
+    "scheduler": "constant",
+    "per_prompt_gradient_cap": 0.25,
+    "global_gradient_clip": 1.0,
+    "checkpoint_steps": [30, 60, 90, 120],
+    "capability_steps": [60, 90, 120],
+    "sampler_refresh": "after_each_accepted_update"
+  },
+  "formula": {
+    "path": "configs/opd/pg_opd_three_policy_correction_v6_common_lr_1e5.yaml",
+    "sha256": "bd7f7ab6b966984077048cb94424cb8c3be2240e00a08ba7cd51f826c8e99b08"
+  },
+  "bounded_rejection": {
+    "total_max": 3,
+    "consecutive_max": 2,
+    "rejected_attempt_counts_as_commit": false,
+    "action_redraw_on_rejection": false,
+    "reserve_attempts_per_slot": 3
+  },
+  "isolation": {
+    "final_access": false,
+    "confirmation_600_access": false,
+    "label_access_during_training": false
+  }
+}

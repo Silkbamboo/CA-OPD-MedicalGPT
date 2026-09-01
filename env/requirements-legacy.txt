@@ -1,0 +1,15 @@
+# Direct-package snapshot of the retained Qwen2.5 legacy environment.
+# Observed via importlib.metadata on 2026-07-30; this is for provenance only.
+# It is intentionally separate from requirements-opd.txt and must not be
+# upgraded in place. A complete transitive freeze was not available from the
+# historical runs, so this file does not claim to be a full lock.
+
+torch==2.3.0+cu121
+transformers==4.49.0
+trl==0.15.2
+peft==0.18.1
+datasets==4.7.0
+accelerate==1.13.0
+safetensors==0.7.0
+PyYAML==6.0.1
+pytest==9.1.1

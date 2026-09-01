@@ -1,0 +1,66 @@
+run:
+  name: qwen3-4b-medical-sft-v3-mcq-dominant-seed42
+  purpose: "P3.6 frozen MCQ-dominant 3:1 task-balanced Medical Teacher repair"
+  baseline_id: B1
+  seed: 42
+  # Sanitized repository-relative path; rebuild manifests for a new run.
+  output_root: artifacts/outputs
+  hardware_calibration_status: measured_on_target_hardware
+  fixed_run_id: true
+  resume_from_checkpoint: null
+model:
+  path: artifacts/models/Qwen3-4B
+  revision: 1cfa9a7208912126459214e8b04321603b3df60c
+  tokenizer_revision: 1cfa9a7208912126459214e8b04321603b3df60c
+  max_seq_length: 2048
+  attn_implementation: flash_attention_2
+  torch_dtype: bfloat16
+data:
+  protocol_version: ca-opd-data-v2
+  data_dir: artifacts/data/sft_v3
+  manifest_path: data/manifests/sft_v3_mcq_dominant/medical_sft_v3_manifest.json
+  records_path: artifacts/data/sft_v3/medical_sft_train.jsonl
+  target_role: medical_sft_train
+  enable_thinking: false
+  max_samples: null
+  include_reasoning: false
+  system_prompt: "你是一名严谨的中文医疗助手。回答需明确不确定性，并在必要时建议就医。"
+  drop_longer_than_max_seq: true
+  supervision_version: mcq_dominant_task_balanced_v3
+  answer_weight: 1.0
+  reasoning_weight: 1.0
+  eos_weight: 1.0
+  loss_chunk_tokens: 64
+lora:
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+optim:
+  optimizer: adamw_torch_fused
+  lr: 0.0001
+  epochs: 1.0
+  per_device_batch_size: 1
+  gradient_accumulation_steps: 8
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  lr_scheduler_type: cosine
+  max_grad_norm: 1.0
+  gradient_checkpointing: true
+  save_steps: 0.25
+  logging_steps: 1
+  save_only_model: false
+  save_total_limit: 4
+  max_steps: 600
+distributed:
+  launch_mode: ddp
+  backend: nccl
+  world_size: 2
+  broadcast_buffers: false
+  find_unused_parameters: false
+  gradient_as_bucket_view: true
+  bucket_cap_mb: 16
+  global_weighted_denominator: true
+  rank_zero_only_writes: true
+  fresh_base_per_rank: true
+  device_map: none

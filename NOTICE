@@ -1,0 +1,9 @@
+CA-OPD-MedicalGPT
+Copyright 2026 Zejiang Cao
+
+This product includes original research code released under Apache License 2.0.
+It is informed by the MedicalGPT project and the OPD experiment design linked in
+the README. No source code from those repositories is relicensed by this notice.
+
+Third-party model and dataset assets are not distributed. Their names, roles and
+recorded license status are listed in THIRD_PARTY_NOTICES.md.

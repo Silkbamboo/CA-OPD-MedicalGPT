@@ -1,0 +1,55 @@
+data_protocol_version: ca-opd-data-v2
+source_policy_version: ca-opd-source-policy-v1
+seed: 42
+medical_o1:
+  formal_targets:
+    medical_sft_train: 8000
+    medical_sft_dev: 500
+    medical_opd_o1: 2000
+    audit_holdout: 300
+  smoke_targets:
+    medical_sft_train: 8
+    medical_sft_dev: 4
+    medical_opd_o1: 4
+    audit_holdout: 4
+cmb:
+  role_by_split: {train: medical_opd_cmb}
+  formal_target: 2000
+  smoke_target: 20
+  stratify_fields: [exam_type, exam_class, exam_subject]
+medqa_zh:
+  conflict_policy_version: medqa-final-precedence-v1
+  consistent_cross_split_action: keep_test_drop_validation
+  anomalous_cross_split_action: quarantine_both_sides
+  all_shared_hashes_training_denylisted: true
+  role_by_split:
+    dev: medical_controller_dev
+    validation: medical_controller_dev
+    test: medical_final_test
+  primary_final_seed: 42
+  primary_final_target: 600
+coig:
+  role: general_anchors
+  formal_upstream_split: Default
+  excluded_upstream_splits: [NoTranslate]
+  formal_quotas:
+    coig_leetcode: 800
+    gpt4_llm_alpaca_zh: 3200
+  formally_excluded_subsources:
+    translated: blocked_row_provenance
+    exam: unknown_license
+    human_value: blocked_file_provenance
+  preserve_actual_if_short: true
+  duplicate_to_fill: false
+  # Historical synthetic shape regression only; these rows do not establish
+  # formal license eligibility and never enter the main result table.
+  smoke_quotas:
+    translated: 5
+    exam: 5
+    leetcode: 5
+    human_value: 5
+ceval:
+  role_by_split:
+    dev: ceval_smoke
+    val: general_controller_dev
+    test: general_final_test

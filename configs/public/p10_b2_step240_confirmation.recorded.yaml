@@ -1,0 +1,104 @@
+schema_version: 1
+protocol_id: p10_b2_step240_confirmation_v1
+frozen_at_utc: "2026-08-30T05:45:46Z"
+parent_git_sha: 96218e3666d34f1c6cd7a78114f9a62fd6a15810
+formal_p9_git_sha: 071f0d0d51d588b9e1c47585ddeefd3707d78cd7
+run_id: qwen3-4b-p10-b2-step240-confirmation-seed42
+# Paths are sanitized, repository-relative placeholders. Rebuild all artifact
+# identities before a new run; do not impersonate the historical P10 artifact.
+output_root: artifacts/outputs
+
+comparison:
+  primary: B2_step240_vs_B0_paired_medical_confirmation_600
+  routes: [B0, B2_step240]
+  only_candidate_step: 240
+  b1_included: false
+  checkpoint_selection_after_confirmation: false
+
+base:
+  model_id: Qwen/Qwen3-4B
+  path: artifacts/models/Qwen3-4B
+  manifest_path: data/manifests/models/qwen3_4b_manifest.json
+  manifest_sha256: 66fee1d61f185f46114e50376a37dea102d121e02ec06697a9e7254134b8e195
+  revision: 1cfa9a7208912126459214e8b04321603b3df60c
+  tokenizer_revision: 1cfa9a7208912126459214e8b04321603b3df60c
+
+b2_step240:
+  path: artifacts/outputs/qwen3-4b-b2-p9-adaptive-dose-seed42/formal_checkpoints/step_240
+  adapter_sha256: d9829cdc3382eb04846c61a608bac82722039efbcfec5797b2bcea1104ed534b
+  adapter_weight_sha256: 3a038ba0c1f036bcaf95e82f985314964b31b0234bc6c5cb214a80e8b7948842
+  checkpoint_manifest_sha256: a3fafacaba237209db80fb105dcbe9f60f3f032aabf5e0032276b723ae4c3332
+  immutable: true
+
+confirmation:
+  role: medical_teacher_confirmation_dev
+  manifest_path: data/manifests/confirmation_v1/medical_teacher_confirmation_dev_manifest.json
+  manifest_sha256: f8adb4464c6da9ba9bb6632244d41d2b790e2bc08b707c6d5fc31694b2ea8556
+  prompt_path: artifacts/data/medical_teacher_confirmation_dev_v1/medical_teacher_confirmation_dev.prompts.jsonl
+  prompt_sha256: ed87f344c5d8a4fb3b080f241b6764f77f3bcbb3a80fa8cd71a00c591fcaa0ae
+  label_path: artifacts/data/medical_teacher_confirmation_dev_v1/medical_teacher_confirmation_dev.labels.jsonl
+  label_sha256: ebbf4a8c38da52b68421f83c8e7f3019a41c1b58a2ee638ff67ec1f0d30f8237
+  count: 600
+  source: bigbio/med_qa
+  source_revision: ca00e01fbf688d59b54730857759059b2faafc57
+  upstream_split: validation
+  selected_sample_ids_sha256: c3e6ee829d8746c6eff8d4f48fc589aa845b71f1303acf16a1abe8dc74e3cff0
+  historical_teacher_label_joins: 1
+  historical_b2_label_joins: 0
+  final_historical_access_count: 0
+
+scorer:
+  controller_config_path: configs/eval/qwen3_4b/controller_v2.yaml
+  controller_config_sha256: 88b93f41637364bfb58cc19458ee8b9830f8e58d3b00a9d988969a4cbe9ad56a
+  protocol_sha256: d95a053d67d3aaf2c9664468d4523e4fb8b97391ed78eb749314b463b6e724ea
+  prompt_sha256: 03889765822590637cff573ee47e68a8bee6f547ad8e7b5773d0a78cc6b34e9d
+  scorer_sha256: 6ea7250be620faf7ac078391f42b695e98458ea0ef6fdb8a11d14905dd9a7caf
+  backend: transformers_direct_logits
+  batch_size: 1
+  model_dtype: bfloat16
+  log_softmax_dtype: float32
+  enable_thinking: false
+  use_cache: false
+  attention: eager
+  merge_lora: false
+  candidate_token_ids: {A: 32, B: 33, C: 34, D: 35, E: 36}
+  candidate_policy: real_option_count_single_token
+  seed: 42
+  micro_smoke_ids: lexicographically_first_4_confirmation_sample_ids
+  micro_smoke_count: 4
+  micro_smoke_repeats_per_route: 3
+  repeat_tolerance: 0.0001
+
+statistics:
+  paired: true
+  bootstrap_seed: 42
+  bootstrap_samples: 10000
+  confidence_level: 0.95
+  exact_mcnemar: true
+  positive_requires_delta_gt_zero: true
+  positive_requires_ci_lower_gt_zero: true
+  positive_requires_p_lt: 0.05
+
+isolation:
+  prediction_first: true
+  label_join_max_count: 1
+  final_access_allowed: false
+  trainer_access_allowed: false
+  scheduler_access_allowed: false
+  router_access_allowed: false
+  checkpoint_selector_access_allowed: false
+  forbidden_roles: [medical_final_test, general_final_test]
+  no_training: true
+  no_checkpoint_selection: true
+  no_post_result_tuning: true
+  no_step301_or_higher: true
+
+runtime:
+  runtime_policy: progress_aware
+  global_runtime_hard_limit: null
+  live_price_cny_per_instance_hour: 2.96
+  platform_actual_cost_cny: null
+  prediction_device: cuda:0
+  gpu_count_audited: 2
+  sequential_model_loading: true
+  minimum_persistent_free_bytes: 10000000000

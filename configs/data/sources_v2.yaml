@@ -1,0 +1,66 @@
+data_protocol_version: ca-opd-data-v2
+schema_version: 2
+source_policy_version: ca-opd-source-policy-v1
+sources:
+  medical_o1:
+    adapter: medical_o1
+    source: FreedomIntelligence/medical-o1-reasoning-SFT
+    revision: fc2c9e8a37b38f38da6d449564a8c350b244aef4
+    license: Apache-2.0
+    upstream_splits: [train]
+    fixture_path: ../../tests/fixtures/data_v2/medical_o1.jsonl
+  cmb:
+    adapter: cmb
+    source: FreedomIntelligence/CMB
+    revision: 935fbc09edf1303d89872b21265ff597f426ac0d
+    license: Apache-2.0
+    upstream_splits: [train, val, test]
+    fixture_path: ../../tests/fixtures/data_v2/cmb.jsonl
+  medqa_zh:
+    adapter: medqa_zh
+    source: bigbio/med_qa
+    revision: ca00e01fbf688d59b54730857759059b2faafc57
+    license: unknown
+    representation_config: med_qa_zh_source
+    usage_scope: local_evaluation_only
+    redistribution_allowed: false
+    primary_final_frozen: false
+    # BigBio names the official development capability "validation".
+    upstream_splits: [validation, test]
+    split_field: _upstream_split
+    fixture_path: ../../tests/fixtures/data_v2/medqa_zh.jsonl
+  coig:
+    adapter: coig
+    source: BAAI/COIG
+    revision: 9f25758ec94f82762fb9c09a5c60e908cfb83632
+    license: subsource-specific
+    # The pinned repository exposes Default/NoTranslate, not train. Only
+    # Default is admitted by ADR-0006; NoTranslate is fail-closed.
+    upstream_splits: [Default]
+    excluded_upstream_splits: [NoTranslate]
+    subsource_field: _subsource
+    license_field: _source_license
+    fixture_path: ../../tests/fixtures/data_v2/coig.jsonl
+  ceval:
+    adapter: ceval
+    source: ceval/ceval-exam
+    revision: 617524a00b307ff6f9933702f724131fe12ca7ce
+    license: CC BY-NC-SA 4.0
+    upstream_splits: [dev, val, test]
+    split_field: _upstream_split
+    subject_field: _subject
+    fixture_path: ../../tests/fixtures/data_v2/ceval.jsonl
+
+# P1.6 replacement policy is kept outside ``sources`` so the five-source
+# synthetic P1 smoke loop remains a historical regression rather than
+# pretending that its fixtures are real replacement-source evidence.
+general_anchor_replacements:
+  gpt4_llm_alpaca_zh:
+    adapter: coig
+    source: Instruction-Tuning-with-GPT-4/GPT-4-LLM
+    revision: 80cda626ea305004be42426671c66efebbf22144
+    data_file: data/alpaca_gpt4_data_zh.json
+    license: CC-BY-NC-4.0
+    usage_scope: noncommercial_research_only
+    public_checkpoint_release: false
+    raw_data_redistribution: false

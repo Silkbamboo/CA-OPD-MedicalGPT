@@ -1,0 +1,18 @@
+# Values tied to B0 controller results intentionally remain null until the GPU
+# B0 evaluation is run. This is a run input, not a guessed result.
+medical_target: null
+general_baseline: null
+delta: 0.01
+scale_medical: 0.05
+scale_general: 0.05
+rho: 0.7
+tau: 1.0
+p_min: 0.2
+p_max: 0.8
+window_steps: 25
+windows_below_to_recover: 2
+windows_above_to_release: 1
+early_stop_patience: 3
+early_stop_min_improvement: 0.002
+initial_p_medical: 0.5
+configuration_status: pending_b0_controller_and_gpu_calibration
