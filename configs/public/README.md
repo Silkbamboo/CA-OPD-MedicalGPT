@@ -7,3 +7,7 @@ experiments, while replacing machine-specific absolute paths with repository-rel
 They are evidence and reconstruction templates, not a way to reuse the historical hashes on a
 different model, dataset or Git commit. A new run must rebuild manifests/packages and receive a
 new identity. Model weights, processed data, labels and checkpoints are not distributed.
+
+`inherits` points to the distributed public snapshot when one exists. `historical_inherits` and
+other historical config/manifest paths preserve provenance only; some of those source artifacts
+are intentionally not distributed and therefore are not executable references in this release.

@@ -12,6 +12,17 @@
     "IDT_step120": {"medical_correct": 217, "general_correct": 127},
     "CA_step120": {"medical_correct": 216, "general_correct": 126}
   },
+  "b1_vs_b0": {
+    "medical_delta": 0.07,
+    "medical_paired_bootstrap_95_ci": [0.03, 0.11333333333333333],
+    "medical_mcnemar_exact_two_sided_p": 0.001913961001264397,
+    "general_delta": 0.052631578947368474,
+    "general_improved": 20,
+    "general_regressed": 9,
+    "general_unchanged": 180,
+    "general_paired_bootstrap_95_ci": [0.004784688995215311, 0.10526315789473684],
+    "general_mcnemar_exact_two_sided_p": 0.06142834573984146
+  },
   "ca_minus_idt_step120": {
     "medical_delta": -0.0033333333333334103,
     "medical_paired_bootstrap_95_ci": [-0.016666666666666666, 0.01],

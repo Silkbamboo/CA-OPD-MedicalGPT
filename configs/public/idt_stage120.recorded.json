@@ -2,7 +2,8 @@
   "schema_id": "ca-opd/p7-idt-stage120/v4",
   "schema_version": 4,
   "method_id": "IDT-v2",
-  "inherits": "configs/runs/qwen3_4b_stage120_common_v4.json",
+  "inherits": "configs/public/stage120_common.recorded.json",
+  "historical_inherits": "configs/runs/qwen3_4b_stage120_common_v4.json",
   "fresh_v0_required": true,
   "actions": {
     "medical": "2_o1_plus_2_cmb_all_medical_teacher",

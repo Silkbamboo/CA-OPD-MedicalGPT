@@ -67,6 +67,11 @@ Formal reconstruction must use the upstream revisions and role rules in
 [`DATA_PROTOCOL.md`](DATA_PROTOCOL.md). Do not commit the resulting raw or processed files.
 MedQA licensing remains unresolved, so obtain it independently and review its terms.
 
+The historical formal build used an explicit time-constrained MVP waiver for manual row-by-row
+near-duplicate review. Automated checks passed and all 23 cross-role candidates were
+conservatively resolved, but a reproduction should complete the manual audit instead of
+inheriting that waiver silently.
+
 ## 4. Recorded GPU protocols
 
 Sanitized protocol snapshots are in [`configs/public`](../configs/public). Paths were replaced

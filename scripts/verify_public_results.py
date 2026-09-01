@@ -33,6 +33,9 @@ def main() -> int:
 
     assert stage120["routes"]["CA_step120"]["medical_correct"] <= stage120["routes"]["IDT_step120"]["medical_correct"]
     assert stage120["routes"]["CA_step120"]["general_correct"] <= stage120["routes"]["IDT_step120"]["general_correct"]
+    assert stage120["b1_vs_b0"]["general_improved"] == 20
+    assert stage120["b1_vs_b0"]["general_regressed"] == 9
+    assert stage120["b1_vs_b0"]["general_mcnemar_exact_two_sided_p"] > 0.05
 
     points = {row["step"]: row for row in curve["points"]}
     assert points[240]["medical_correct"] - curve["base"]["medical_correct"] == 4

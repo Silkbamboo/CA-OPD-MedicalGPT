@@ -4,11 +4,13 @@
 
 - SFT-v3 produced a confirmed medical improvement on the frozen 600-question development
   confirmation set.
-- The same SFT checkpoint also improved the selected General Controller, so the expected
-  forgetting premise was not observed in this experiment.
-- Medical OPD showed a small development-set peak at step 240, but an independent B2
-  confirmation on 600 questions produced exactly the same accuracy as Base.
-- The equal-budget 120-step CA-OPD arm did not outperform fixed IDT.
+- The same SFT checkpoint had a higher General Controller point estimate, so the expected
+  forgetting premise was not observed. Its exact McNemar p-value was 0.0614, so this is not
+  presented as a separately significant General improvement.
+- Medical OPD showed a small development-set peak at step 240, but a 600-question confirmation
+  set isolated from B2 training and model selection produced exactly the same accuracy as Base.
+- At the same 120 accepted steps and four prompts per step, CA-OPD did not outperform fixed IDT.
+  Generated-token counts and wall-clock time were not equal between the two routes.
 
 Machine-readable aggregate summaries are in [`artifacts/results`](../artifacts/results).
 
@@ -23,7 +25,11 @@ Paired outcomes were 54 improved, 30 regressed and 516 unchanged. This supports 
 claim that the frozen SFT route improved accuracy on this development-confirmation protocol.
 It is not a final-test or clinical-validity claim.
 
-## Equal-budget controller results
+The SFT run completed 600 optimizer steps. Step450 and step600 both reached 240/300 on the
+Medical Controller; the frozen earlier-step tie-break selected step450, which is the checkpoint
+used for the 600-question confirmation.
+
+## Same-step, same-prompt-count controller results
 
 | Route | Medical correct / 300 | General correct / 209 | Medical | General |
 |---|---:|---:|---:|---:|
@@ -35,6 +41,10 @@ It is not a final-test or clinical-validity claim.
 
 At step120, CA minus IDT was -0.33pp Medical and -0.48pp General; both paired confidence
 intervals crossed zero. The evidence therefore does not support CA superiority.
+
+B1 versus B0 on General was 20 improved, 9 regressed and 180 unchanged, with paired bootstrap
+95% CI `[+0.478,+10.526]pp` and exact McNemar `p=0.0614`. The supported wording is therefore
+“no observed forgetting and a higher point estimate,” not a standalone significant improvement.
 
 ## B2 dose-response curve
 
@@ -52,7 +62,7 @@ The pre-registered development rule selected step240. Its Medical delta over B0 
 (+1.33pp), paired CI `[-1.00,+4.00]pp`, exact McNemar `p=0.424`. Later checkpoints declined,
 which is why the development point was treated as a candidate rather than a result.
 
-## Independent B2 confirmation
+## Confirmation isolated from B2 training and selection
 
 | Route | Correct / 600 | Accuracy |
 |---|---:|---:|
@@ -66,7 +76,9 @@ which is why the development point was treated as a candidate rather than a resu
 
 The registered decision is `b2_step240_confirmation_not_supported`. The project stopped B2
 and did not try another checkpoint, seed, prompt template or response length after observing
-this result.
+this result. This was the first B2 access to the 600-question capability, but the same frozen
+set had previously been used once for the B0/B1 Teacher confirmation; it is therefore not an
+untouched final test.
 
 ## What may and may not be claimed
 

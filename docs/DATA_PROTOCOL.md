@@ -14,6 +14,7 @@ benchmark questions, labels and full processed corpora are not distributed in th
 | CMB | `935fbc09edf1303d89872b21265ff597f426ac0d` | Apache-2.0 | SFT MCQ bridge and medical OPD |
 | MedQA-zh | source revisions are bound in generated manifests | unknown | medical controller/confirmation/final candidates |
 | COIG family | `9f25758ec94f82762fb9c09a5c60e908cfb83632` | checked per subsource | general anchors |
+| GPT4-LLM Chinese Alpaca | `80cda626ea305004be42426671c66efebbf22144` | CC-BY-NC-4.0 | general anchors, noncommercial research only |
 | C-Eval | `617524a00b307ff6f9933702f724131fe12ca7ce` | CC BY-NC-SA 4.0 | general controller/final candidates |
 
 License metadata is evidence about the reviewed revision, not legal advice. Unknown or
@@ -26,7 +27,7 @@ unresolved subsources fail closed. See [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_N
 | `medical_sft_train` | 9,600 in SFT-v3 (7,200 CMB + 2,400 Medical-O1) | SFT only | SFT target is available |
 | `medical_opd_o1` | prompt pool | OPD only | physically removed |
 | `medical_opd_cmb` | prompt pool | OPD only | physically removed |
-| `general_anchors` | prompt pool | IDT/CA Base route only | physically removed |
+| `general_anchors` | 3,793 (3,200 GPT4-LLM Chinese Alpaca + 593 COIG-LeetCode) | IDT/CA Base route only | physically removed |
 | `medical_controller_dev` | 300 | no | evaluator process only |
 | `general_controller_dev` | 209 | no | evaluator process only |
 | `medical_teacher_confirmation_dev` | 600 | no | one prediction-first join per registered comparison |
@@ -59,3 +60,12 @@ positive/negative status. Option order is never sorted.
 
 The public fixtures under [`tests/fixtures`](../tests/fixtures) are synthetic and exist only to
 exercise adapters and leakage guards.
+
+## Manual-audit boundary
+
+The formal build passed automated schema, exact-hash, role-overlap and supervision-field gates.
+Its near-duplicate scan produced 433 candidate pairs; 23 crossed protected roles and were
+conservatively resolved with no unresolved cross-role candidate remaining. The planned manual
+row-by-row audit was explicitly waived for the time-constrained interview MVP. The precise status
+is therefore `formal_ready_mvp_waived`, not fully human-audited data. This limitation applies to
+all reported training results.

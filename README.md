@@ -12,21 +12,21 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 在 `2 × RTX 3090 24GB` 上实现医疗 SFT、单教师 Medical OPD、固定双教师 IDT 与约束感知 CA-OPD，
-并用预注册、prediction-first 的独立确认实验检验医疗能力迁移是否可复现。
+并用预注册、prediction-first、与 B2 训练及选模隔离的确认实验检验医疗能力迁移是否可复现。
 
 **Research only · Not for clinical use**
 
 </div>
 
-> 本项目保留并公开负向结果：SFT-v3 的医疗增益获得独立确认；Medical OPD 在开发集最佳
-> checkpoint 上出现 `+1.33pp` 点估计，但没有在独立 600 题确认中复现；固定 IDT 与
-> CA-OPD 的等预算实验也没有支持 CA 优于 IDT。项目没有继续针对确认集调参，也没有访问
+> 本项目保留并公开负向结果：SFT-v3 的医疗增益在预冻结确认集上得到支持；Medical OPD 在开发集最佳
+> checkpoint 上出现 `+1.33pp` 点估计，但没有在对 B2 隔离的 600 题确认中复现；固定 IDT 与
+> CA-OPD 在相同 accepted-step 和 prompt 数下也没有支持 CA 优于 IDT。项目没有继续针对确认集调参，也没有访问
 > final test。
 
 ## TL;DR
 
 - **做了什么**：围绕 Qwen3-4B 构建 Medical SFT → Medical OPD → IDT → CA-OPD 的训练与评测闭环。
-- **得到什么**：SFT-v3 在冻结的 600 题确认集上相对 Base 提升 `4.00pp`；B2 step240 的开发集趋势在另一轮独立 B2 确认中变为 `0.00pp`。
+- **得到什么**：SFT-v3 在冻结的 600 题确认集上相对 Base 提升 `4.00pp`；B2 step240 的开发集趋势在一次对 B2 训练和选模隔离的确认中变为 `0.00pp`。
 - **项目价值**：实现双 3090 下的三策略训练、原子 checkpoint、完整恢复、候选更新事务回滚、标签隔离评测和配对统计，而不是只报告最好的开发集数字。
 
 | 冻结事实 | 值 |
@@ -39,12 +39,17 @@
 | Formal trainer | custom `Transformers + PEFT` three-policy loop |
 | Final-test access | `0` |
 
+口径说明：本文的 confirmation 是开发确认能力，不是 final test。P10 的 600 题在 B2 训练和
+checkpoint 选择期间不可见，P10 是 B2 对该集合的首次访问；但同一集合此前曾用于一次 B0/B1
+Teacher 确认，因此不把它描述成全项目从未访问过的新测试集。IDT 与 CA 的“同预算”仅指均为
+120 个 accepted steps、每步 4 个 prompts；两者生成 token 数和实际运行时间并不相同。
+
 ## 实验结论
 
 | 研究假设 | 关键证据 | 判定 |
 |---|---|---|
-| Medical SFT 能提升医疗能力 | 600 题：`443 → 467`，`+4.00pp`，95% CI `[+1.17,+7.00]pp`，McNemar `p=0.0116` | 支持 |
-| 本项目中的 SFT 会损害通用能力 | Controller：`61.244% → 66.507%` | 未观察到 |
+| SFT-v3 在冻结的 600 题开发确认协议上提高准确率 | `443 → 467`，`+4.00pp`，95% CI `[+1.17,+7.00]pp`，McNemar `p=0.0116` | 支持 |
+| 本项目中的 SFT 会损害通用能力 | General Controller 点估计：`61.244% → 66.507%`；exact McNemar `p=0.0614` | 未观察到，但不宣称显著提升 |
 | 单教师 Medical OPD 能稳定迁移医疗能力 | 开发集最佳点 `+1.33pp`；600 题 B2 确认 `0.00pp` | 不支持 |
 | CA-OPD 优于固定 IDT | step120 Medical：`72.00% vs 72.33%` | 不支持 |
 | CA 在通用约束下更稳定 | 当前单 seed、120 步证据未形成优势 | 不支持 |
@@ -129,18 +134,22 @@ flowchart LR
 |---|---|---|
 | Medical SFT | Medical-O1 中文 + CMB train bridge | 仅 SFT 可读取答案/推理 |
 | Medical OPD | Medical-O1 holdout + CMB train | 导出为 prompt-only，物理删除监督字段 |
-| General Anchors | 许可合格的非医疗指令/考试子源 | prompt-only，只供 Base Teacher 路线 |
+| General Anchors | 3,200 条 GPT4-LLM 中文 Alpaca + 593 条 COIG-LeetCode | prompt-only，只供 Base Teacher 路线；受各自非商用/相同方式共享条款约束 |
 | Medical Controller | 300 题 | 开发集选模，label 仅 evaluator 可读 |
 | General Controller | 209 题、8 个非医疗学科 | 约束与开发集分析 |
-| Medical confirmation | 预冻结 MedQA validation 600 题 | checkpoint 冻结后一次性 B2 确认 |
+| Medical confirmation | 预冻结 MedQA validation 600 题 | 曾用于一次 B0/B1 Teacher 确认；P10 是首次 B2 访问 |
 | Final | 独立 capability | 本项目从未访问 |
 
 训练、Controller、confirmation 与 final 使用稳定 ID、规范化文本哈希和近重复 group 做隔离；
 P10 审计中 confirmation 与所有训练/Controller pool 的 sample/content/group overlap 均为 0。
 
+数据质量边界也被保留：完整构建产生 433 个近重复候选，其中 23 个跨角色候选已按保守规则
+隔离到无未解决冲突；但计划中的人工逐条复核因面试项目时间约束被明确豁免。因此正式数据状态是
+`formal_ready_mvp_waived`，不是“已经完成全面人工审核”。
+
 ## 主结果
 
-### 1. SFT-v3 独立确认
+### 1. SFT-v3 预冻结确认
 
 | Route | Correct | Accuracy | 相对 Base | Paired 95% CI | McNemar p |
 |---|---:|---:|---:|---:|---:|
@@ -160,6 +169,10 @@ P10 审计中 confirmation 与所有训练/Controller pool 的 sample/content/gr
 | IDT step120 | 72.33% | 60.766% | −0.67 / −0.478pp | 满足点估计约束，但未提升 Medical |
 | CA step120 | 72.00% | 60.287% | −1.00 / −0.957pp | 未优于 IDT |
 
+B1 的 General Controller 是 `20` 题改善、`9` 题退化，paired bootstrap 95% CI 为
+`[+0.478,+10.526]pp`，但 exact McNemar `p=0.0614`。因此本文只说“没有观察到遗忘、点估计
+提高”，不把它单独表述为统计显著的通用能力提升。
+
 ### 3. B2 训练剂量曲线
 
 | Accepted step | Medical | General |
@@ -173,10 +186,10 @@ P10 审计中 confirmation 与所有训练/Controller pool 的 sample/content/gr
 | 300 | 72.67% | 60.287% |
 
 step240 是预注册规则选择的开发集最佳 checkpoint：相对 B0 净增加 4/300，Medical 点估计
-`+1.33pp`；但 paired CI 跨 0，且 step270/300 回落，因此只能进入独立确认，不能直接当作
+`+1.33pp`；但 paired CI 跨 0，且 step270/300 回落，因此只能进入与 B2 训练/选模隔离的确认，不能直接当作
 算法提升结论。
 
-### 4. P10：600 题一次性 B2 确认
+### 4. P10：600 题首次 B2 确认
 
 | Route | Correct | Accuracy |
 |---|---:|---:|
@@ -188,6 +201,7 @@ step240 是预注册规则选择的开发集最佳 checkpoint：相对 B0 净增
 - paired bootstrap 95% CI：`[-1.50,+1.50]pp`；
 - exact McNemar：`p=1.0`；
 - B2 prediction 在确认前从未访问该集合；
+- 同一集合此前曾用于一次 B0/B1 Teacher 确认，因此它不是全项目未触碰的 final test；
 - 所有 prediction 先冻结并生成 SHA，随后独立打开 label；
 - final access 始终为 0。
 
@@ -206,6 +220,10 @@ prompt 或输出长度重新评测。
 费用字段只报告由实测进程时间和当时 `2.96 CNY/instance-hour` 推导的估计值；平台完整实付账单
 不可读取时保持 `null`，不会用估算冒充实付。
 
+SFT-v3 的完整运行是 600 optimizer steps；step450 与 step600 在 300 题 Medical Controller
+上同为 `240/300`，冻结的预注册 tie-break 选择更早的 step450。上面的 600 题 SFT 确认评估
+的是 step450，而不是 step600。
+
 ## 关键故障与修复
 
 | 问题 | 诊断 | 处理 |
@@ -213,7 +231,7 @@ prompt 或输出长度重新评测。
 | DataParallel 在 GPU0 聚合 logits 时 OOM | 单卡承担聚合峰值，而非总显存不足 | 改为 memory-balanced DDP，保持有效 batch 与损失定义 |
 | vLLM LoRA `prompt_logprobs` 重复漂移 | Base 稳定、LoRA route 超出冻结容差；未确认具体底层内核原因 | 正式选择题评分改为 Transformers direct logits，vLLM 路径降级为诊断用途 |
 | 单条 prompt 出现极端梯度 | 短 CMB completion 产生高梯度，但简单最小长度会改变数据来源权重 | 为每条等权 trajectory 分配相同 trust budget，再保留全局裁剪 |
-| 开发集最佳 checkpoint 未复现 | step240 在 300 题净增 4 题，600 题变为 10 改善/10 退化 | 接受独立确认结果，停止 B2、IDT/CA 与结果后调参 |
+| 开发集最佳 checkpoint 未复现 | step240 在 300 题净增 4 题，600 题变为 10 改善/10 退化 | 接受 B2 隔离确认结果，停止 B2、IDT/CA 与结果后调参 |
 
 这些修复分别解决运行正确性、显存与证据可靠性问题；它们不被包装成已经验证的算法性能提升。
 
@@ -222,11 +240,11 @@ prompt 或输出长度重新评测。
 本项目参考了：
 
 - [shibing624/MedicalGPT](https://github.com/shibing624/MedicalGPT) 的医疗后训练工程；
-- [llm-agent-rl-lab / 02-opd](https://github.com/KMnO4-zx/llm-agent-rl-lab/tree/main/02-opd) 的 Medical OPD、SAR 与 IDT 问题设置。
+- [agentic-rl-lab / 02-opd](https://github.com/KMnO4-zx/agentic-rl-lab/tree/main/02-opd) 的 Medical OPD、SAR 与 IDT 问题设置。
 
 本项目不是绝对数值复刻。模型版本、训练后端、group size、数据划分和评测协议都不同，因此
 参考项目数字不与本项目数字放入同一主结果表。本仓库额外强调数据角色隔离、prediction-first
-评测、事务回滚、完整恢复、SHA 身份链和独立确认。
+评测、事务回滚、完整恢复、SHA 身份链和与训练/选模隔离的确认。
 
 多教师 OPD 已有公开相关工作；本项目不声称首次提出多教师蒸馏，也不声称 SOTA。
 
@@ -277,7 +295,7 @@ accuracy 不是 Qwen3-4B 能力结果。公开快照在发布环境的实测结�
 完整训练依赖、协议快照和实现分别位于：
 
 - [`env/requirements-opd.txt`](env/requirements-opd.txt)：双 3090 实测软件栈；
-- [`configs/public`](configs/public)：脱敏后的 SFT、B2/IDT/CA 与 P10 协议快照；
+- [`configs/public`](configs/public)：脱敏后的 SFT、stage120 共用训练设置、IDT/CA 与 P10 协议快照；
 - [`src/sft`](src/sft)：DDP SFT；
 - [`src/opd`](src/opd)：三策略 OPD、路由、事务更新与恢复；
 - [`src/eval`](src/eval)：direct-logit Controller 与 prediction-first confirmation。
@@ -303,8 +321,8 @@ accuracy 不是 Qwen3-4B 能力结果。公开快照在发布环境的实测结�
 公开仓库包含：
 
 - 核心源码、配置模板和测试；
-- 合成 fixture 与可重建的数据 manifest；
-- 脱敏后的技术 ADR；
+- 合成 fixture，以及生成和校验 manifest 的配置与代码；
+- 公开版方法、数据、结果、工程和复现说明；
 - 聚合实验结果和复现说明；
 - 不包含原始题目的图表与统计。
 
@@ -321,6 +339,7 @@ accuracy 不是 Qwen3-4B 能力结果。公开快照在发布环境的实测结�
 - 主实验只有一个随机种子；
 - OPD 使用 `group_size=1`；
 - IDT 与 CA-OPD 只完成 120 accepted steps；
+- 正式数据通过自动 schema、哈希、泄漏和跨角色近重复隔离，但人工逐条审计被显式豁免；
 - Medical 与 General 主要是选择题能力，不代表临床诊断或医疗安全；
 - P10 没有支持 B2 相对 Base 的稳定提升；
 - 当前数据没有支持 CA-OPD 优于 IDT；

@@ -71,7 +71,8 @@ selects the Teacher for the next window subject to probability bounds. Final-tes
 cannot be imported by the router or trainer.
 
 The router implementation is in [`src/opd/router.py`](../src/opd/router.py). The experiment
-found no advantage over IDT at the 120-step equal-budget boundary.
+found no advantage over IDT at the shared boundary of 120 accepted steps and four prompts per
+step. This controls update count and prompt count, not generated-token count or wall-clock time.
 
 ## Scoring and evaluation
 
