@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" role="img" aria-labelledby="title desc">
+  <title id="title">B2 development dose response and isolated confirmation</title>
+  <desc id="desc">Medical and General Controller deltas are plotted across B2 accepted checkpoints. A paired-effect forest plot contrasts the development-selected step with the six-hundred-question confirmation isolated from B2 training and model selection.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC',
+           'Microsoft YaHei', Arial, sans-serif; fill: #0f172a; }
+    .figure-title { font-size: 28px; font-weight: 700; }
+    .figure-subtitle { font-size: 16px; fill: #475569; }
+    .panel-title { font-size: 19px; font-weight: 700; }
+    .box-title { font-size: 18px; font-weight: 700; }
+    .box-copy { font-size: 16px; fill: #475569; }
+    .label { font-size: 16px; }
+    .small { font-size: 15px; fill: #475569; }
+    .axis { font-size: 15px; fill: #475569; }
+    .axis-title { font-size: 16px; font-weight: 600; fill: #0f172a; }
+    .value { font-size: 16px; font-weight: 700; }
+    .note { font-size: 15px; fill: #475569; }
+    .flow { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  <rect width="1200" height="600" fill="#ffffff"/>
+  <text x="600" y="42" class="figure-title" text-anchor="middle">B2 dose-response: development selection versus isolated confirmation</text>
+  <text x="600" y="70" class="figure-subtitle" text-anchor="middle">Sparse accepted-checkpoint evaluations; connecting lines are visual guides, not unobserved measurements.</text>
+  <rect x="25" y="100" width="735" height="470" rx="14" fill="#f8fafc" stroke="#cbd5e1"/>
+  <rect x="785" y="100" width="390" height="470" rx="14" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="50" y="135" class="panel-title" text-anchor="start">A · Controller delta from B0</text>
+  <text x="50" y="161" class="small" text-anchor="start">Medical n=300 · General n=209 · accepted checkpoints only</text>
+  <line x1="115" y1="485" x2="725" y2="485" stroke="#475569" stroke-width="1.3"/>
+  <line x1="115.0" y1="485" x2="115.0" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="115.0" y="512" class="axis" text-anchor="middle">120</text>
+  <line x1="216.67" y1="485" x2="216.67" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="216.67" y="512" class="axis" text-anchor="middle">150</text>
+  <line x1="318.33" y1="485" x2="318.33" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="318.33" y="512" class="axis" text-anchor="middle">180</text>
+  <line x1="420.0" y1="485" x2="420.0" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="420.0" y="512" class="axis" text-anchor="middle">210</text>
+  <line x1="521.67" y1="485" x2="521.67" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="521.67" y="512" class="axis" text-anchor="middle">240</text>
+  <line x1="623.33" y1="485" x2="623.33" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="623.33" y="512" class="axis" text-anchor="middle">270</text>
+  <line x1="725.0" y1="485" x2="725.0" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="725.0" y="512" class="axis" text-anchor="middle">300</text>
+  <text x="420.0" y="538" class="axis-title" text-anchor="middle">Accepted step</text>
+  <line x1="115" y1="195" x2="115" y2="485" stroke="#475569" stroke-width="1.3"/>
+  <line x1="115" y1="485.0" x2="108" y2="485.0" stroke="#475569" stroke-width="1.2"/>
+  <line x1="115" y1="485.0" x2="116" y2="485.0" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="103" y="490.0" class="axis" text-anchor="end">-3</text>
+  <line x1="115" y1="427.0" x2="108" y2="427.0" stroke="#475569" stroke-width="1.2"/>
+  <line x1="115" y1="427.0" x2="116" y2="427.0" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="103" y="432.0" class="axis" text-anchor="end">-2</text>
+  <line x1="115" y1="369.0" x2="108" y2="369.0" stroke="#475569" stroke-width="1.2"/>
+  <line x1="115" y1="369.0" x2="116" y2="369.0" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="103" y="374.0" class="axis" text-anchor="end">-1</text>
+  <line x1="115" y1="311.0" x2="108" y2="311.0" stroke="#475569" stroke-width="1.2"/>
+  <line x1="115" y1="311.0" x2="116" y2="311.0" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="103" y="316.0" class="axis" text-anchor="end">0</text>
+  <line x1="115" y1="253.0" x2="108" y2="253.0" stroke="#475569" stroke-width="1.2"/>
+  <line x1="115" y1="253.0" x2="116" y2="253.0" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="103" y="258.0" class="axis" text-anchor="end">1</text>
+  <line x1="115" y1="195.0" x2="108" y2="195.0" stroke="#475569" stroke-width="1.2"/>
+  <line x1="115" y1="195.0" x2="116" y2="195.0" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="103" y="200.0" class="axis" text-anchor="end">2</text>
+  <text x="57" y="340.0" class="axis-title" text-anchor="middle" transform="rotate(-90 57 340.0)">Accuracy delta vs B0 (pp)</text>
+  <line x1="115" y1="311.0" x2="725" y2="311.0" stroke="#475569" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="123" y="303.0" class="small" text-anchor="start">B0 reference</text>
+  <line x1="115" y1="369.0" x2="725" y2="369.0" stroke="#ea580c" stroke-width="1.4" stroke-dasharray="4 5"/>
+  <text x="123" y="361.0" class="small" text-anchor="start" fill="#ea580c">General floor (-1 pp)</text>
+  <line x1="521.67" y1="195" x2="521.67" y2="485" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="528.67" y="213" class="small" text-anchor="start" fill="#7c3aed">dev-selected step240</text>
+  <polyline points="115.00,349.67 216.67,330.33 318.33,369.00 386.11,272.33 521.67,233.67 623.33,330.33 725.00,330.33" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="115.0" cy="349.67" r="5.5" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
+  <circle cx="216.67" cy="330.33" r="5.5" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
+  <circle cx="318.33" cy="369.0" r="5.5" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
+  <circle cx="386.11" cy="272.33" r="5.5" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
+  <circle cx="521.67" cy="233.67" r="8" fill="#ffffff" stroke="#2563eb" stroke-width="3"/>
+  <circle cx="623.33" cy="330.33" r="5.5" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
+  <circle cx="725.0" cy="330.33" r="5.5" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
+  <polyline points="115.00,311.00 216.67,366.50 318.33,422.00 386.11,449.76 521.67,366.50 623.33,422.00 725.00,366.50" fill="none" stroke="#ea580c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="115.0" cy="311.0" r="5.5" fill="#ea580c" stroke="#ea580c" stroke-width="2"/>
+  <circle cx="216.67" cy="366.5" r="5.5" fill="#ea580c" stroke="#ea580c" stroke-width="2"/>
+  <circle cx="318.33" cy="422.0" r="5.5" fill="#ea580c" stroke="#ea580c" stroke-width="2"/>
+  <circle cx="386.11" cy="449.76" r="5.5" fill="#ea580c" stroke="#ea580c" stroke-width="2"/>
+  <circle cx="521.67" cy="366.5" r="8" fill="#ffffff" stroke="#ea580c" stroke-width="3"/>
+  <circle cx="623.33" cy="422.0" r="5.5" fill="#ea580c" stroke="#ea580c" stroke-width="2"/>
+  <circle cx="725.0" cy="366.5" r="5.5" fill="#ea580c" stroke="#ea580c" stroke-width="2"/>
+  <line x1="505" y1="145" x2="535" y2="145" stroke="#2563eb" stroke-width="3"/>
+  <circle cx="520" cy="145" r="5" fill="#2563eb" stroke="#2563eb" stroke-width="1"/>
+  <text x="545" y="151" class="label" text-anchor="start" fill="#2563eb">Medical</text>
+  <line x1="625" y1="145" x2="655" y2="145" stroke="#ea580c" stroke-width="3"/>
+  <circle cx="640" cy="145" r="5" fill="#ea580c" stroke="#ea580c" stroke-width="1"/>
+  <text x="665" y="151" class="label" text-anchor="start" fill="#ea580c">General</text>
+  <text x="810" y="135" class="panel-title" text-anchor="start">B · Medical effect size</text>
+  <text x="810" y="161" class="small" text-anchor="start">Paired difference vs B0 with bootstrap 95% CI</text>
+  <line x1="930" y1="495" x2="1140" y2="495" stroke="#475569" stroke-width="1.3"/>
+  <line x1="930.0" y1="495" x2="930.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="930.0" y="522" class="axis" text-anchor="middle">-2</text>
+  <line x1="990.0" y1="495" x2="990.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="990.0" y="522" class="axis" text-anchor="middle">0</text>
+  <line x1="1050.0" y1="495" x2="1050.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="1050.0" y="522" class="axis" text-anchor="middle">2</text>
+  <line x1="1110.0" y1="495" x2="1110.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="1110.0" y="522" class="axis" text-anchor="middle">4</text>
+  <text x="1035.0" y="548" class="axis-title" text-anchor="middle">Difference vs B0 (pp)</text>
+  <line x1="990.0" y1="195" x2="990.0" y2="495" stroke="#475569" stroke-width="1.5" stroke-dasharray="7 5"/>
+  <text x="810" y="268" class="label" text-anchor="start">Controller dev</text>
+  <text x="810" y="294" class="small" text-anchor="start">McNemar p = 0.424</text>
+  <line x1="960.0" y1="285" x2="1110.0" y2="285" stroke="#7c3aed" stroke-width="5"/>
+  <line x1="960.0" y1="276" x2="960.0" y2="294" stroke="#7c3aed" stroke-width="2"/>
+  <line x1="1110.0" y1="276" x2="1110.0" y2="294" stroke="#7c3aed" stroke-width="2"/>
+  <circle cx="1030.0" cy="285" r="8" fill="#7c3aed" stroke="#ffffff" stroke-width="2"/>
+  <text x="1030.0" y="267" class="value" text-anchor="middle" fill="#7c3aed">+1.33 pp</text>
+  <text x="1030.0" y="311" class="small" text-anchor="middle">95% CI [-1.00, +4.00]</text>
+  <text x="810" y="393" class="label" text-anchor="start">B2 confirmation</text>
+  <text x="810" y="419" class="small" text-anchor="start">McNemar p = 1</text>
+  <line x1="945.0" y1="410" x2="1035.0" y2="410" stroke="#ea580c" stroke-width="5"/>
+  <line x1="945.0" y1="401" x2="945.0" y2="419" stroke="#ea580c" stroke-width="2"/>
+  <line x1="1035.0" y1="401" x2="1035.0" y2="419" stroke="#ea580c" stroke-width="2"/>
+  <circle cx="990.0" cy="410" r="8" fill="#ea580c" stroke="#ffffff" stroke-width="2"/>
+  <text x="990.0" y="392" class="value" text-anchor="middle" fill="#ea580c">+0.00 pp</text>
+  <text x="990.0" y="436" class="small" text-anchor="middle">95% CI [-1.50, +1.50]</text>
+</svg>

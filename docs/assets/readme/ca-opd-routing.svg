@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" role="img" aria-labelledby="title desc">
+  <title id="title">Constraint-aware CA-OPD routing loop</title>
+  <desc id="desc">Medical and General Controller scores are smoothed into capability gaps. A bounded, hysteretic router selects a Medical or Base Teacher route for the shared Student update, then evaluates again every thirty accepted steps.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC',
+           'Microsoft YaHei', Arial, sans-serif; fill: #0f172a; }
+    .figure-title { font-size: 28px; font-weight: 700; }
+    .figure-subtitle { font-size: 16px; fill: #475569; }
+    .panel-title { font-size: 19px; font-weight: 700; }
+    .box-title { font-size: 18px; font-weight: 700; }
+    .box-copy { font-size: 16px; fill: #475569; }
+    .label { font-size: 16px; }
+    .small { font-size: 15px; fill: #475569; }
+    .axis { font-size: 15px; fill: #475569; }
+    .axis-title { font-size: 16px; font-weight: 600; fill: #0f172a; }
+    .value { font-size: 16px; font-weight: 700; }
+    .note { font-size: 15px; fill: #475569; }
+    .flow { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  <rect width="1200" height="600" fill="#ffffff"/>
+  <text x="600" y="45" class="figure-title" text-anchor="middle">CA-OPD: constraint-aware Teacher routing</text>
+  <text x="600" y="73" class="figure-subtitle" text-anchor="middle">Controller feedback changes the next training window; confirmation and final labels remain outside the training graph.</text>
+  <rect x="35" y="145" width="185" height="160" rx="12" fill="#dcfce7" stroke="#059669"/>
+  <text x="53" y="177" class="box-title" text-anchor="start">Controller dev</text>
+  <text x="53" y="206" class="box-copy" text-anchor="start">Medical accuracy M_k</text><text x="53" y="228" class="box-copy" text-anchor="start">General accuracy G_k</text><text x="53" y="250" class="box-copy" text-anchor="start">label-isolated evaluator</text>
+  <rect x="260" y="145" width="180" height="160" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="278" y="177" class="box-title" text-anchor="start">Capability gaps</text>
+  <text x="278" y="206" class="box-copy" text-anchor="start">EMA smoothing</text><text x="278" y="228" class="box-copy" text-anchor="start">medical target gap</text><text x="278" y="250" class="box-copy" text-anchor="start">general floor gap</text>
+  <rect x="480" y="125" width="215" height="200" rx="12" fill="#ede9fe" stroke="#7c3aed"/>
+  <text x="498" y="157" class="box-title" text-anchor="start">Router state</text>
+  <text x="498" y="186" class="box-copy" text-anchor="start">softmax + [p_min, p_max]</text><text x="498" y="208" class="box-copy" text-anchor="start">hysteresis</text><text x="498" y="230" class="box-copy" text-anchor="start">RECOVER_GENERAL:</text><text x="498" y="252" class="box-copy" text-anchor="start">p_M = p_min</text>
+  <rect x="740" y="95" width="190" height="135" rx="12" fill="#ffedd5" stroke="#ea580c"/>
+  <text x="758" y="127" class="box-title" text-anchor="start">Medical route</text>
+  <text x="758" y="156" class="box-copy" text-anchor="start">Medical prompt pool</text><text x="758" y="178" class="box-copy" text-anchor="start">B1 SFT Teacher</text><text x="758" y="200" class="box-copy" text-anchor="start">probability p_M</text>
+  <rect x="740" y="270" width="190" height="135" rx="12" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="758" y="302" class="box-title" text-anchor="start">General route</text>
+  <text x="758" y="331" class="box-copy" text-anchor="start">General anchors</text><text x="758" y="353" class="box-copy" text-anchor="start">B0 Base Teacher</text><text x="758" y="375" class="box-copy" text-anchor="start">probability 1 - p_M</text>
+  <rect x="975" y="175" width="190" height="170" rx="12" fill="#f8fafc" stroke="#0f172a"/>
+  <text x="993" y="207" class="box-title" text-anchor="start">Shared Student update</text>
+  <text x="993" y="236" class="box-copy" text-anchor="start">Student rollout</text><text x="993" y="258" class="box-copy" text-anchor="start">same-trajectory scoring</text><text x="993" y="280" class="box-copy" text-anchor="start">correction + PPO</text><text x="993" y="302" class="box-copy" text-anchor="start">transaction gate</text>
+  <rect x="35" y="385" width="405" height="105" rx="12" fill="#fee2e2" stroke="#dc2626" stroke-dasharray="8 6"/>
+  <text x="53" y="417" class="box-title" text-anchor="start">Capability boundary</text>
+  <text x="53" y="446" class="box-copy" text-anchor="start">Controller may feed the router.</text><text x="53" y="468" class="box-copy" text-anchor="start">Confirmation / final cannot be imported by trainer or router.</text>
+  <line x1="220" y1="225" x2="260" y2="225" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <line x1="440" y1="225" x2="480" y2="225" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <path d="M 695 205 C 715 205 720 163 740 163" fill="none" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <path d="M 695 245 C 715 245 720 338 740 338" fill="none" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <path d="M 930 163 C 950 163 950 225 975 225" fill="none" stroke="#ea580c" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <path d="M 930 338 C 950 338 950 295 975 295" fill="none" stroke="#2563eb" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <path d="M 1070 345 V 530 H 128 V 305" fill="none" stroke="#059669" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <text x="602" y="553" class="note" text-anchor="middle" fill="#059669">evaluate every 30 accepted steps → update the next route window</text>
+</svg>

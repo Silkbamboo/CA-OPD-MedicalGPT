@@ -119,6 +119,14 @@ y\sim\mu(\cdot\mid x)
 | $\pi_\theta$ | optimizer 侧当前 Student probability | 可求梯度 |
 | $\pi_T$ | 选定 Teacher 对同一 token 序列的 probability | stop-gradient |
 
+<p align="center">
+  <img src="docs/assets/readme/opd-training-loop.svg" alt="同轨迹 OPD 训练闭环：prompt-only batch 由 Student 采样，四类概率在同一 token 轨迹上评分，经 PPO 候选更新和事务门禁提交或回滚" width="100%">
+</p>
+
+**图 1｜同轨迹 OPD 训练闭环。** $\mu$、$p_{\mathrm{old}}$、$\pi_\theta$ 与 $\pi_T$
+始终在 Student 实际采样的同一 token 轨迹上定义；B2、IDT 和 CA-OPD 共用同轨迹 scoring、
+PPO-style 更新与事务门禁骨架，prompt / Teacher 路由和安全控制按各自冻结协议生效。
+
 Teacher 不重新生成另一条 completion。Student 与 Teacher 对同一条 `prompt + student completion`
 做 causal-shift 对齐和 token-level scoring；训练信号为：
 
@@ -178,6 +186,14 @@ p_{\min},p_{\max}
 频繁切换；进入 `RECOVER_GENERAL` 后直接令 $p_M=p_{\min}$，直到满足恢复条件。IDT 固定提交
 `60 Medical / 60 General` 个路由步；CA-OPD 在同一 120-step 上限内
 实际提交 `87 Medical / 33 General` 个路由步，说明路由策略确实不同，但结果没有显示 CA 优于 IDT。
+
+<p align="center">
+  <img src="docs/assets/readme/ca-opd-routing.svg" alt="CA-OPD 约束感知路由：Medical 与 General Controller 经 EMA、能力缺口和迟滞状态计算路由概率，在 Medical Teacher 与 Base Teacher 之间选择下一训练窗口" width="100%">
+</p>
+
+**图 2｜约束感知 Teacher 路由。** Controller 每 30 个 accepted steps 更新一次下一窗口的
+路由分布；`RECOVER_GENERAL` 状态将 Medical 概率压到 `p_min`。Controller 可以向路由器提供
+开发集能力信号，confirmation 与 final 标签不能进入 trainer 或 router。
 
 ### 3. KL 安全控制与事务式更新
 
@@ -285,6 +301,20 @@ CI 与 two-sided exact McNemar 检验。final 不是普通的 `split=final` 参�
 
 ## 实验结果
 
+<p align="center">
+  <img src="docs/assets/readme/experiment-overview.svg" alt="关键实验结果：左侧森林图比较 SFT-v3 与 B2 相对 Base 的配对准确率差值及置信区间，右侧能力平面比较五条路线的 Medical 与 General Controller 准确率" width="100%">
+</p>
+
+**图 3｜确认结果与能力平面。** 左图报告 600 题开发确认协议上的配对效应量：SFT-v3
+相对 Base 为 `+4.00pp`，B2 step240 为 `0.00pp`；右图给出 Controller 开发集上的
+Medical–General 二维位置，红色虚线为预冻结通用约束 `60.244%`。B2、IDT、CA 对齐的是
+`120 accepted steps × 4 prompts`，B1 仅作为 SFT 参照，不属于等训练预算比较。主实验为单 seed，
+图中不包含 final test。
+
+图表由 [`scripts/render_readme_figures.py`](scripts/render_readme_figures.py) 直接读取
+[`artifacts/results`](artifacts/results) 中通过 SHA-256 校验的公开聚合结果生成；精确数值与统计口径
+仍以下列表格为准。
+
 ### 1. SFT-v3：预冻结 600 题确认
 
 | Route | Correct | Accuracy | 相对 Base | Paired 95% CI | McNemar p |
@@ -325,6 +355,15 @@ McNemar 检验均为 `p=1.0`。现有证据不支持 CA-OPD 优于 IDT。
 | **240** | **223** | **74.33%** | **126** | **60.287%** |
 | 270 | 218 | 72.67% | 124 | 59.330% |
 | 300 | 218 | 72.67% | 126 | 60.287% |
+
+<p align="center">
+  <img src="docs/assets/readme/b2-dose-confirmation.svg" alt="B2 剂量曲线与隔离确认：左侧展示 accepted step 120 至 300 的 Medical 和 General Controller 相对 Base 变化，右侧比较开发集 step240 与 600 题 B2 隔离确认的配对效应量" width="100%">
+</p>
+
+**图 4｜B2 开发集选点与隔离确认。** 左图只连接实际评测过的 accepted checkpoints，连线用于
+辅助观察，不表示中间 step 已完成评测；step240 是预注册规则选出的开发集候选。右图显示该点在
+300 题 Controller 上为 `+1.33pp` 且置信区间跨 0，在与 B2 训练和选模隔离的 600 题确认中变为
+`0.00pp`。该确认集不是全项目未触碰的 final，final access 仍为 `0`。
 
 step240 是预注册规则选择的开发集最佳 checkpoint：相对 B0 增加 `4/300`，Medical 点估计
 `+1.33pp`，paired CI `[-1.00,+4.00]pp`，exact McNemar `p=0.4240`。置信区间跨 0，且

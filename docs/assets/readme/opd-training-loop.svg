@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Same-trajectory OPD training loop</title>
+  <desc id="desc">Prompt-only data feed a Student rollout. Behavior, old actor, current actor and selected Teacher probabilities are kept distinct before a transactional PPO-style update.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC',
+           'Microsoft YaHei', Arial, sans-serif; fill: #0f172a; }
+    .figure-title { font-size: 28px; font-weight: 700; }
+    .figure-subtitle { font-size: 16px; fill: #475569; }
+    .panel-title { font-size: 19px; font-weight: 700; }
+    .box-title { font-size: 18px; font-weight: 700; }
+    .box-copy { font-size: 16px; fill: #475569; }
+    .label { font-size: 16px; }
+    .small { font-size: 15px; fill: #475569; }
+    .axis { font-size: 15px; fill: #475569; }
+    .axis-title { font-size: 16px; font-weight: 600; fill: #0f172a; }
+    .value { font-size: 16px; font-weight: 700; }
+    .note { font-size: 15px; fill: #475569; }
+    .flow { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  <rect width="1200" height="620" fill="#ffffff"/>
+  <text x="600" y="45" class="figure-title" text-anchor="middle">Same-trajectory OPD: four probability identities</text>
+  <text x="600" y="73" class="figure-subtitle" text-anchor="middle">B2, IDT and CA share the scoring, PPO and transaction skeleton; routing and safety controls are protocol-specific.</text>
+  <rect x="35" y="150" width="165" height="150" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="53" y="182" class="box-title" text-anchor="start">Prompt batch</text>
+  <text x="53" y="211" class="box-copy" text-anchor="start">No answer fields</text><text x="53" y="233" class="box-copy" text-anchor="start">Medical or General</text>
+  <rect x="235" y="150" width="175" height="150" rx="12" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="253" y="182" class="box-title" text-anchor="start">Student rollout</text>
+  <text x="253" y="211" class="box-copy" text-anchor="start">behavior policy μ</text><text x="253" y="233" class="box-copy" text-anchor="start">completion tokens</text>
+  <rect x="445" y="150" width="170" height="150" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="463" y="182" class="box-title" text-anchor="start">Frozen trajectory</text>
+  <text x="463" y="211" class="box-copy" text-anchor="start">same prompt</text><text x="463" y="233" class="box-copy" text-anchor="start">same token path</text>
+  <rect x="650" y="100" width="315" height="250" rx="12" fill="#ffffff" stroke="#7c3aed"/>
+  <text x="668" y="133" class="box-title" text-anchor="start">Token probabilities</text>
+  <circle cx="675" cy="167" r="6" fill="#2563eb" stroke="#2563eb" stroke-width="1"/>
+  <text x="694" y="172" class="value" text-anchor="start" fill="#2563eb">μ</text>
+  <text x="742" y="172" class="box-copy" text-anchor="start">rollout logprob · detached</text>
+  <circle cx="675" cy="210" r="6" fill="#475569" stroke="#475569" stroke-width="1"/>
+  <text x="694" y="215" class="value" text-anchor="start" fill="#475569">p_old</text>
+  <text x="742" y="215" class="box-copy" text-anchor="start">old actor · detached</text>
+  <circle cx="675" cy="253" r="6" fill="#7c3aed" stroke="#7c3aed" stroke-width="1"/>
+  <text x="694" y="258" class="value" text-anchor="start" fill="#7c3aed">πθ</text>
+  <text x="742" y="258" class="box-copy" text-anchor="start">current actor · gradient</text>
+  <circle cx="675" cy="296" r="6" fill="#ea580c" stroke="#ea580c" stroke-width="1"/>
+  <text x="694" y="301" class="value" text-anchor="start" fill="#ea580c">πT</text>
+  <text x="742" y="301" class="box-copy" text-anchor="start">selected Teacher · detached</text>
+  <rect x="1000" y="150" width="165" height="150" rx="12" fill="#ede9fe" stroke="#7c3aed"/>
+  <text x="1018" y="182" class="box-title" text-anchor="start">PPO candidate</text>
+  <text x="1018" y="211" class="box-copy" text-anchor="start">advantage A_t</text><text x="1018" y="233" class="box-copy" text-anchor="start">PPO ratio r_t</text><text x="1018" y="255" class="box-copy" text-anchor="start">token correction c_t</text><text x="1018" y="277" class="box-copy" text-anchor="start">prompt-equal mean</text>
+  <rect x="1000" y="405" width="165" height="130" rx="12" fill="#dcfce7" stroke="#059669"/>
+  <text x="1018" y="437" class="box-title" text-anchor="start">Transaction gate</text>
+  <text x="1018" y="466" class="box-copy" text-anchor="start">identity · finite · ESS</text><text x="1018" y="488" class="box-copy" text-anchor="start">grad · generation</text><text x="1018" y="510" class="box-copy" text-anchor="start">commit or rollback</text>
+  <line x1="200" y1="225" x2="235" y2="225" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)" class="flow"/>
+  <line x1="410" y1="225" x2="445" y2="225" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)" class="flow"/>
+  <line x1="615" y1="225" x2="650" y2="225" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)" class="flow"/>
+  <line x1="965" y1="225" x2="1000" y2="225" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)" class="flow"/>
+  <line x1="1082" y1="300" x2="1082" y2="405" stroke="#475569" stroke-width="2.2" marker-end="url(#arrow)" class="flow"/>
+  <path d="M 1000 482 H 322 V 310" fill="none" stroke="#059669" stroke-width="2.2" marker-end="url(#arrow)"/>
+  <text x="625" y="505" class="note" text-anchor="middle" fill="#059669">commit LoRA / optimizer / RNG / cursor; refresh and verify sampler</text>
+  <text x="1082" y="378" class="note" text-anchor="middle">health checks before commit</text>
+  <text x="600" y="585" class="figure-subtitle" text-anchor="middle">Teacher never generates a replacement answer; all four probabilities are evaluated on the Student&#x27;s sampled tokens.</text>
+</svg>

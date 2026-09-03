@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" role="img" aria-labelledby="title desc">
+  <title id="title">Key experiment results</title>
+  <desc id="desc">A forest plot shows SFT-v3 and B2 paired differences against Base on a six-hundred-question development confirmation protocol. A capability plane shows Medical and General Controller outcomes with the frozen General constraint.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC',
+           'Microsoft YaHei', Arial, sans-serif; fill: #0f172a; }
+    .figure-title { font-size: 28px; font-weight: 700; }
+    .figure-subtitle { font-size: 16px; fill: #475569; }
+    .panel-title { font-size: 19px; font-weight: 700; }
+    .box-title { font-size: 18px; font-weight: 700; }
+    .box-copy { font-size: 16px; fill: #475569; }
+    .label { font-size: 16px; }
+    .small { font-size: 15px; fill: #475569; }
+    .axis { font-size: 15px; fill: #475569; }
+    .axis-title { font-size: 16px; font-weight: 600; fill: #0f172a; }
+    .value { font-size: 16px; font-weight: 700; }
+    .note { font-size: 15px; fill: #475569; }
+    .flow { stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  <rect width="1200" height="600" fill="#ffffff"/>
+  <text x="600" y="42" class="figure-title" text-anchor="middle">Key results: paired confirmation and capability plane</text>
+  <text x="600" y="70" class="figure-subtitle" text-anchor="middle">Development / confirmation protocols only · single seed · final-test access = 0</text>
+  <rect x="25" y="100" width="500" height="470" rx="14" fill="#f8fafc" stroke="#cbd5e1"/>
+  <rect x="550" y="100" width="625" height="470" rx="14" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="50" y="135" class="panel-title" text-anchor="start">A · Paired accuracy difference vs Base</text>
+  <text x="50" y="161" class="small" text-anchor="start">600-question confirmation · paired bootstrap 95% CI</text>
+  <line x1="180" y1="495" x2="495" y2="495" stroke="#475569" stroke-width="1.3"/>
+  <line x1="180.0" y1="495" x2="180.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="180.0" y="522" class="axis" text-anchor="middle">-2</text>
+  <line x1="243.0" y1="495" x2="243.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="243.0" y="522" class="axis" text-anchor="middle">0</text>
+  <line x1="306.0" y1="495" x2="306.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="306.0" y="522" class="axis" text-anchor="middle">2</text>
+  <line x1="369.0" y1="495" x2="369.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="369.0" y="522" class="axis" text-anchor="middle">4</text>
+  <line x1="432.0" y1="495" x2="432.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="432.0" y="522" class="axis" text-anchor="middle">6</text>
+  <line x1="495.0" y1="495" x2="495.0" y2="502" stroke="#475569" stroke-width="1.2"/>
+  <text x="495.0" y="522" class="axis" text-anchor="middle">8</text>
+  <text x="337.5" y="548" class="axis-title" text-anchor="middle">Difference vs Base (percentage points)</text>
+  <line x1="243.0" y1="190" x2="243.0" y2="495" stroke="#475569" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="55" y="253" class="label" text-anchor="start">B1 SFT-v3 step450 - B0</text>
+  <text x="55" y="279" class="small" text-anchor="start">McNemar p = 0.01163</text>
+  <line x1="279.75" y1="270" x2="463.5" y2="270" stroke="#059669" stroke-width="5"/>
+  <line x1="279.75" y1="261" x2="279.75" y2="279" stroke="#059669" stroke-width="2"/>
+  <line x1="463.5" y1="261" x2="463.5" y2="279" stroke="#059669" stroke-width="2"/>
+  <circle cx="369.0" cy="270" r="8" fill="#059669" stroke="#ffffff" stroke-width="2"/>
+  <text x="369.0" y="252" class="value" text-anchor="middle" fill="#059669">+4.00 pp</text>
+  <text x="369.0" y="296" class="small" text-anchor="middle">95% CI [+1.17, +7.00]</text>
+  <text x="55" y="378" class="label" text-anchor="start">B2 step240 - B0</text>
+  <text x="55" y="404" class="small" text-anchor="start">McNemar p = 1</text>
+  <line x1="195.75" y1="395" x2="290.25" y2="395" stroke="#ea580c" stroke-width="5"/>
+  <line x1="195.75" y1="386" x2="195.75" y2="404" stroke="#ea580c" stroke-width="2"/>
+  <line x1="290.25" y1="386" x2="290.25" y2="404" stroke="#ea580c" stroke-width="2"/>
+  <circle cx="243.0" cy="395" r="8" fill="#ea580c" stroke="#ffffff" stroke-width="2"/>
+  <text x="243.0" y="377" class="value" text-anchor="middle" fill="#ea580c">+0.00 pp</text>
+  <text x="243.0" y="421" class="small" text-anchor="middle">95% CI [-1.50, +1.50]</text>
+  <text x="575" y="135" class="panel-title" text-anchor="start">B · Medical-General outcome plane</text>
+  <text x="575" y="161" class="small" text-anchor="start">Controller dev: Medical n=300, General n=209</text>
+  <line x1="650" y1="485" x2="1140" y2="485" stroke="#475569" stroke-width="1.3"/>
+  <line x1="681.82" y1="485" x2="681.82" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="681.82" y="512" class="axis" text-anchor="middle">60</text>
+  <line x1="809.09" y1="485" x2="809.09" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="809.09" y="512" class="axis" text-anchor="middle">62</text>
+  <line x1="936.36" y1="485" x2="936.36" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="936.36" y="512" class="axis" text-anchor="middle">64</text>
+  <line x1="1063.64" y1="485" x2="1063.64" y2="492" stroke="#475569" stroke-width="1.2"/>
+  <text x="1063.64" y="512" class="axis" text-anchor="middle">66</text>
+  <text x="895.0" y="538" class="axis-title" text-anchor="middle">General accuracy (%)</text>
+  <line x1="650" y1="195" x2="650" y2="485" stroke="#475569" stroke-width="1.3"/>
+  <line x1="650" y1="454.47" x2="643" y2="454.47" stroke="#475569" stroke-width="1.2"/>
+  <line x1="650" y1="454.47" x2="651" y2="454.47" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="638" y="459.47" class="axis" text-anchor="end">72</text>
+  <line x1="650" y1="393.42" x2="643" y2="393.42" stroke="#475569" stroke-width="1.2"/>
+  <line x1="650" y1="393.42" x2="651" y2="393.42" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="638" y="398.42" class="axis" text-anchor="end">74</text>
+  <line x1="650" y1="332.37" x2="643" y2="332.37" stroke="#475569" stroke-width="1.2"/>
+  <line x1="650" y1="332.37" x2="651" y2="332.37" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="638" y="337.37" class="axis" text-anchor="end">76</text>
+  <line x1="650" y1="271.32" x2="643" y2="271.32" stroke="#475569" stroke-width="1.2"/>
+  <line x1="650" y1="271.32" x2="651" y2="271.32" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="638" y="276.32" class="axis" text-anchor="end">78</text>
+  <line x1="650" y1="210.26" x2="643" y2="210.26" stroke="#475569" stroke-width="1.2"/>
+  <line x1="650" y1="210.26" x2="651" y2="210.26" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="638" y="215.26" class="axis" text-anchor="end">80</text>
+  <text x="592" y="340.0" class="axis-title" text-anchor="middle" transform="rotate(-90 592 340.0)">Medical accuracy (%)</text>
+  <rect x="650" y="195" width="47.34667246628965" height="290" fill="#fee2e2" opacity="0.65"/>
+  <line x1="697.35" y1="195" x2="697.35" y2="485" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="7 5"/>
+  <text x="704.35" y="213" class="small" text-anchor="start" fill="#dc2626">General floor 60.244%</text>
+  <circle cx="760.98" cy="423.95" r="8" fill="#0f172a" stroke="#ffffff" stroke-width="2"/>
+  <text x="772.98" y="409.95" class="value" text-anchor="start" fill="#0f172a">B0 Base</text>
+  <circle cx="1095.91" cy="210.26" r="8" fill="#059669" stroke="#ffffff" stroke-width="2"/>
+  <text x="1083.91" y="198.26" class="value" text-anchor="end" fill="#059669">B1 SFT-v3</text>
+  <circle cx="760.98" cy="444.3" r="8" fill="#2563eb" stroke="#ffffff" stroke-width="2"/>
+  <text x="772.98" y="464.3" class="value" text-anchor="start" fill="#2563eb">B2</text>
+  <circle cx="730.54" cy="444.3" r="8" fill="#7c3aed" stroke="#ffffff" stroke-width="2"/>
+  <text x="718.54" y="420.3" class="value" text-anchor="end" fill="#7c3aed">IDT</text>
+  <circle cx="700.09" cy="454.47" r="8" fill="#ea580c" stroke="#ffffff" stroke-width="2"/>
+  <text x="688.09" y="474.47" class="value" text-anchor="end" fill="#ea580c">CA</text>
+  <text x="862" y="558" class="small" text-anchor="middle">B2 / IDT / CA: 120 × 4 prompts; B1: SFT reference (unequal budget).</text>
+</svg>
