@@ -123,7 +123,7 @@ y\sim\mu(\cdot\mid x)
   <img src="docs/assets/readme/opd-training-loop.svg" alt="同轨迹 OPD 训练闭环：prompt-only batch 由 Student 采样，四类概率在同一 token 轨迹上评分，经 PPO 候选更新和事务门禁提交或回滚" width="100%">
 </p>
 
-**图 1｜同轨迹 OPD 训练闭环。** $\mu$、$p_{\mathrm{old}}$、$\pi_\theta$ 与 $\pi_T$
+**图 1｜同轨迹 OPD 训练闭环。** $\mu,\;p_{\mathrm{old}},\;\pi_\theta,\;\pi_T$
 始终在 Student 实际采样的同一 token 轨迹上定义；B2、IDT 和 CA-OPD 共用同轨迹 scoring、
 PPO-style 更新与事务门禁骨架，prompt / Teacher 路由和安全控制按各自冻结协议生效。
 
@@ -154,7 +154,7 @@ c_t=\exp\left(
 \right)
 ```
 
-统计意义上，$c_t$ 仅截断至最大值 `2`；公式中的 `-20` 只用于避免指数运算下溢，不是根据结果
+统计意义上，修正项 $c_t$ 仅截断至最大值 `2`；公式中的 `-20` 只用于避免指数运算下溢，不是根据结果
 设定的低概率裁剪阈值。最终 surrogate 将 $c_t$ 乘到 PPO clipped surrogate 上；
 每条 trajectory 先对有效 completion token 取均值，再对 4 条 prompts 等权聚合。训练显式
 检查 causal shift、padding、EOS、behavior support、old/current identity、ratio、ESS 与 sampler refresh。
